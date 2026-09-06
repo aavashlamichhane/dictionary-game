@@ -4,7 +4,7 @@ import { Header } from '../components/Header.js';
 import { Lobby } from '../components/Lobby.js';
 import { GameBoard } from '../components/GameBoard.js';
 import { GameOverModal } from '../components/GameOverModal.js';
-import { AlertCircle, Loader2 } from 'lucide-react';
+import { AlertCircle, Loader2, Sparkles, Feather } from 'lucide-react';
 
 interface OnlineGameProps {
   socketHook: ReturnType<typeof useSocket>;
@@ -33,13 +33,19 @@ export const OnlineGame: React.FC<OnlineGameProps> = ({
 
   if (!room || !currentPlayer) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-slate-950 text-slate-100">
-        <Loader2 className="w-10 h-10 text-emerald-400 animate-spin mb-4" />
-        <p className="text-slate-400 font-medium text-sm">Connecting to room...</p>
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-beige text-darkgreen animate-fade-in">
+        <div className="w-16 h-16 rounded-3xl bg-midnight text-beige flex items-center justify-center shadow-warm-md mb-4 animate-gentle-float">
+          <Feather className="w-8 h-8 text-moss-light" />
+        </div>
+        <div className="flex items-center space-x-2 text-darkgreen font-serif text-lg font-bold">
+          <Loader2 className="w-5 h-5 text-midnight animate-spin" />
+          <span>Entering Parlor Room...</span>
+        </div>
+        <p className="text-xs text-darkgreen/60 mt-1 font-medium">Synchronizing lexicon state with server</p>
         {error && (
-          <div className="mt-4 p-3 bg-rose-950/60 border border-rose-800 rounded-xl text-rose-300 text-xs flex items-center space-x-2">
-            <AlertCircle className="w-4 h-4" />
-            <span>{error}</span>
+          <div className="mt-6 p-4 bg-rosy-tint border border-rosy/40 rounded-2xl text-rosy-burn text-xs flex items-center space-x-2.5 shadow-warm-xs max-w-sm">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span className="font-semibold">{error}</span>
           </div>
         )}
       </div>
@@ -49,7 +55,7 @@ export const OnlineGame: React.FC<OnlineGameProps> = ({
   const isHost = currentPlayer.isHost;
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100">
+    <div className="min-h-screen flex flex-col bg-beige text-darkgreen">
       <Header
         roomCode={room.code}
         isConnected={isConnected}
@@ -59,9 +65,9 @@ export const OnlineGame: React.FC<OnlineGameProps> = ({
 
       <main className="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-6 flex flex-col justify-center">
         {error && (
-          <div className="mb-4 p-3.5 bg-rose-950/70 border border-rose-800/80 rounded-2xl text-rose-200 text-sm flex items-center space-x-2 animate-shake">
-            <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />
-            <span>{error}</span>
+          <div className="mb-4 p-4 bg-rosy-tint border border-rosy/50 rounded-2xl text-rosy-burn text-sm flex items-center space-x-2.5 animate-shake shadow-warm-xs">
+            <AlertCircle className="w-5 h-5 text-rosy-burn shrink-0" />
+            <span className="font-semibold">{error}</span>
           </div>
         )}
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Player, RoomState, WordEntry, Violation, ExportedGameData } from '@dict-game/shared';
-import { Plus, Trash2, Play, Users, RotateCcw, Upload, AlertCircle } from 'lucide-react';
+import { Plus, Trash2, Play, Users, RotateCcw, Upload, AlertCircle, Smartphone, Shield } from 'lucide-react';
 import { GameBoard } from '../components/GameBoard.js';
 import { GameOverModal } from '../components/GameOverModal.js';
 import { Header } from '../components/Header.js';
@@ -12,13 +12,13 @@ interface PassAndPlayProps {
   onOpenRules: () => void;
 }
 
-const DEFAULT_AVATARS = ['🦊', '🐼', '🦁', '🐸', '🦉', '🐯', '🐙', '🚀'];
-const DEFAULT_COLORS = ['#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#06b6d4', '#ef4444', '#84cc16'];
+const DEFAULT_AVATARS = ['🦊', '🦉', '🦁', '🐸', '🐼', '🐯', '🐙', '⚡'];
+const DEFAULT_COLORS = ['#105666', '#839958', '#D3968C', '#0A3323', '#B86B52', '#466365', '#C29548', '#6D597A'];
 const STARTING_LETTERS = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'k', 'l', 'm', 'n', 'o', 'p', 'r', 's', 't', 'u', 'w'];
 
 export const PassAndPlay: React.FC<PassAndPlayProps> = ({ onBackToHome, onOpenRules }) => {
   const [inGame, setInGame] = useState(false);
-  const [playerNames, setPlayerNames] = useState<string[]>(['Player 1', 'Player 2']);
+  const [playerNames, setPlayerNames] = useState<string[]>(['Contender 1', 'Contender 2']);
   const [turnTimerSetting, setTurnTimerSetting] = useState(15);
   const [gameModeSetting, setGameModeSetting] = useState<'strikes' | 'sudden_death' | 'casual'>('strikes');
   
@@ -30,7 +30,7 @@ export const PassAndPlay: React.FC<PassAndPlayProps> = ({ onBackToHome, onOpenRu
 
   const handleAddPlayer = () => {
     if (playerNames.length < 8) {
-      setPlayerNames([...playerNames, `Player ${playerNames.length + 1}`]);
+      setPlayerNames([...playerNames, `Contender ${playerNames.length + 1}`]);
     }
   };
 
@@ -58,7 +58,7 @@ export const PassAndPlay: React.FC<PassAndPlayProps> = ({ onBackToHome, onOpenRu
       setImportedGame(data);
       sounds.playChime();
     } catch (err: any) {
-      setImportError(err.message || 'Failed to import file');
+      setImportError(err.message || 'Failed to import match file');
       sounds.playError();
     } finally {
       setIsImporting(false);
@@ -74,7 +74,7 @@ export const PassAndPlay: React.FC<PassAndPlayProps> = ({ onBackToHome, onOpenRu
   const startMatch = () => {
     const players: Player[] = playerNames.map((name, i) => ({
       id: `local-player-${i}`,
-      name: name.trim() || `Player ${i + 1}`,
+      name: name.trim() || `Contender ${i + 1}`,
       avatar: DEFAULT_AVATARS[i % DEFAULT_AVATARS.length],
       color: DEFAULT_COLORS[i % DEFAULT_COLORS.length],
       isHost: i === 0,
@@ -168,7 +168,7 @@ export const PassAndPlay: React.FC<PassAndPlayProps> = ({ onBackToHome, onOpenRu
           const curr = prev.players[prev.currentTurnIndex];
           const violation: Violation = {
             type: 'TIMEOUT',
-            message: `Time's up! ${curr.name} ran out of time!`,
+            message: `Time expired! ${curr.name} failed to inscribe a word in time!`,
             playerId: curr.id,
             playerName: curr.name,
             turnNumber: prev.turnCount + 1,
@@ -240,7 +240,7 @@ export const PassAndPlay: React.FC<PassAndPlayProps> = ({ onBackToHome, onOpenRu
       sounds.playError();
       const violation: Violation = {
         type: 'TOO_SHORT',
-        message: `'${word}' is too short! Minimum length is ${roomState.settings.minWordLength} letters.`,
+        message: `'${word}' is too short! Minimum requirement is ${roomState.settings.minWordLength} letters.`,
         playerId: curr.id,
         playerName: curr.name,
         turnNumber: turnCount,
@@ -274,8 +274,8 @@ export const PassAndPlay: React.FC<PassAndPlayProps> = ({ onBackToHome, onOpenRu
         const violation: Violation = {
           type: 'VERB_FORM_BURNED',
           message: orig.isImported
-            ? `Verb form violation! '${word}' is an inflection of root verb '${orig.isFormOfRoot}', which was already burned in the imported previous game!`
-            : `Verb form violation! '${word}' is an inflection of root verb '${orig.isFormOfRoot}', which was already burned when ${orig.playerName} played '${orig.word}' on Turn ${orig.turn}!`,
+            ? `Verb form infringement! '${word}' is an inflection of root verb '${orig.isFormOfRoot}', which was already burned in the imported dossier!`
+            : `Verb form infringement! '${word}' is an inflection of root verb '${orig.isFormOfRoot}', which was burned when ${orig.playerName} played '${orig.word}' on Turn ${orig.turn}!`,
           offendingWord: word,
           playerId: curr.id,
           playerName: curr.name,
@@ -293,7 +293,7 @@ export const PassAndPlay: React.FC<PassAndPlayProps> = ({ onBackToHome, onOpenRu
       const violation: Violation = {
         type: 'DUPLICATE_WORD',
         message: orig.isImported
-          ? `Duplicate word! '${word}' was already used in the imported previous game!`
+          ? `Duplicate word! '${word}' was already inscribed in the imported previous game!`
           : `'${word}' was already used by ${orig.playerName} on Turn ${orig.turn}!`,
         offendingWord: word,
         playerId: curr.id,
@@ -317,7 +317,7 @@ export const PassAndPlay: React.FC<PassAndPlayProps> = ({ onBackToHome, onOpenRu
         sounds.playError();
         const violation: Violation = {
           type: 'INVALID_DICTIONARY_WORD',
-          message: `'${word}' is not a valid English word in the dictionary!`,
+          message: `'${word}' is not recognized in the standard English dictionary!`,
           offendingWord: word,
           playerId: curr.id,
           playerName: curr.name,
@@ -337,8 +337,8 @@ export const PassAndPlay: React.FC<PassAndPlayProps> = ({ onBackToHome, onOpenRu
           const violation: Violation = {
             type: 'VERB_FORM_BURNED',
             message: origVerb.isImported
-              ? `Verb form violation! Root verb '${root}' was already burned in the imported previous game!`
-              : `Verb form violation! The root verb '${root}' was already burned when ${origVerb.playerName} played '${origVerb.originalWord}' on Turn ${origVerb.turn}!`,
+              ? `Verb form infringement! Root verb '${root}' was already burned in the imported match dossier!`
+              : `Verb form infringement! The root verb '${root}' was already burned when ${origVerb.playerName} played '${origVerb.originalWord}' on Turn ${origVerb.turn}!`,
             offendingWord: word,
             playerId: curr.id,
             playerName: curr.name,
@@ -362,8 +362,8 @@ export const PassAndPlay: React.FC<PassAndPlayProps> = ({ onBackToHome, onOpenRu
               const violation: Violation = {
                 type: 'VERB_FORM_BURNED',
                 message: orig.isImported
-                  ? `Verb form violation! '${word}' is a form of '${root}', which was already burned in the imported previous game!`
-                  : `Verb form violation! '${word}' is a form of '${root}', which was already played as '${orig.word}' by ${orig.playerName} on Turn ${orig.turn}!`,
+                  ? `Verb form infringement! '${word}' is a form of '${root}', which was burned in the imported dossier!`
+                  : `Verb form infringement! '${word}' is a form of '${root}', which was already played as '${orig.word}' by ${orig.playerName} on Turn ${orig.turn}!`,
                 offendingWord: word,
                 playerId: curr.id,
                 playerName: curr.name,
@@ -467,51 +467,59 @@ export const PassAndPlay: React.FC<PassAndPlayProps> = ({ onBackToHome, onOpenRu
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100">
+    <div className="min-h-screen flex flex-col bg-beige text-darkgreen">
       <Header
-        title="Pass & Play (1 Device)"
+        title="Pass & Play (Single Device)"
         onLeave={onBackToHome}
         onOpenRules={onOpenRules}
       />
 
-      <main className="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-6">
+      <main className="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-6 flex flex-col justify-center">
         {!inGame ? (
-          /* Setup View */
-          <div className="max-w-lg mx-auto bg-slate-900/80 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6 animate-fade-in">
+          /* Table Setup View */
+          <div className="max-w-lg mx-auto bg-beige-card border border-darkgreen/15 rounded-3xl p-6 sm:p-8 shadow-warm-lg space-y-6 animate-fade-in w-full">
             <div className="text-center space-y-1.5">
-              <span className="text-xs font-bold uppercase tracking-wider text-amber-400">
-                Single-Device Pass & Play
-              </span>
-              <h2 className="text-2xl font-black text-white">Player Setup</h2>
-              <p className="text-xs text-slate-400">
-                Add players around the table and pass the phone on each turn!
+              <div className="inline-flex items-center space-x-1.5 px-3 py-0.5 rounded-full bg-moss-tint border border-moss/25 text-moss-dark text-[10px] font-black uppercase tracking-widest">
+                <Smartphone className="w-3 h-3 text-moss" />
+                <span>Pass & Play Parlor Table</span>
+              </div>
+              <h2 className="text-2xl font-serif font-black text-darkgreen">
+                Table Configuration
+              </h2>
+              <p className="text-xs text-darkgreen/70">
+                Register contenders around the room. On each turn, pass the device to the active player!
               </p>
             </div>
 
-            {/* Players List Config */}
+            {/* Contenders Registration Roster */}
             <div className="space-y-2.5">
-              <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                Players ({playerNames.length})
-              </label>
-              <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+              <div className="flex items-center justify-between">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-darkgreen/70">
+                  Contenders ({playerNames.length})
+                </label>
+                <span className="text-[10px] text-darkgreen/50">2 to 8 contenders</span>
+              </div>
+
+              <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
                 {playerNames.map((name, idx) => (
                   <div key={idx} className="flex items-center space-x-2">
-                    <span className="w-8 h-8 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-base shrink-0">
+                    <span className="w-9 h-9 rounded-xl bg-beige border border-darkgreen/15 flex items-center justify-center text-base shrink-0 shadow-warm-xs">
                       {DEFAULT_AVATARS[idx % DEFAULT_AVATARS.length]}
                     </span>
                     <input
                       type="text"
                       value={name}
                       onChange={(e) => handleNameChange(idx, e.target.value)}
-                      placeholder={`Player ${idx + 1}`}
+                      placeholder={`Contender ${idx + 1}`}
                       maxLength={18}
-                      className="flex-1 bg-slate-800/90 border border-slate-700 rounded-xl px-3.5 py-2 text-sm font-bold text-slate-100 focus:outline-none focus:border-emerald-500"
+                      className="flex-1 bg-beige/80 border border-darkgreen/20 rounded-xl px-3.5 py-2 text-sm font-bold text-darkgreen focus:outline-none focus:border-midnight shadow-inner-warm"
                     />
                     {playerNames.length > 2 && (
                       <button
                         type="button"
                         onClick={() => handleRemovePlayer(idx)}
-                        className="p-2 text-slate-500 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition-colors"
+                        className="p-2 text-darkgreen/40 hover:text-rosy-burn hover:bg-rosy-tint rounded-xl transition-all"
+                        title="Remove contender"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -524,63 +532,67 @@ export const PassAndPlay: React.FC<PassAndPlayProps> = ({ onBackToHome, onOpenRu
                 <button
                   type="button"
                   onClick={handleAddPlayer}
-                  className="w-full py-2.5 px-3 border border-dashed border-slate-700 hover:border-slate-600 rounded-xl text-xs font-bold text-slate-400 hover:text-slate-200 transition-colors flex items-center justify-center space-x-1.5 mt-2"
+                  className="w-full py-2.5 px-3 border border-dashed border-darkgreen/25 hover:border-darkgreen/40 bg-beige/40 hover:bg-beige rounded-xl text-xs font-bold text-darkgreen/70 hover:text-darkgreen transition-all flex items-center justify-center space-x-1.5 mt-1"
                 >
-                  <Plus className="w-4 h-4" />
-                  <span>Add Another Player</span>
+                  <Plus className="w-4 h-4 text-midnight" />
+                  <span>Add Another Contender</span>
                 </button>
               )}
             </div>
 
-            {/* Settings */}
+            {/* Protocol Settings */}
             <div className="grid grid-cols-2 gap-3 pt-1 text-sm">
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-400">Timer</label>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-darkgreen/70 block">
+                  Turn Timer
+                </label>
                 <select
                   value={turnTimerSetting}
                   onChange={(e) => setTurnTimerSetting(Number(e.target.value))}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 font-medium text-xs focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-beige border border-darkgreen/20 rounded-xl px-3 py-2.5 text-darkgreen font-semibold text-xs focus:outline-none focus:border-midnight shadow-inner-warm"
                 >
                   <option value={10}>10s (Fast)</option>
-                  <option value={15}>15s (Normal)</option>
-                  <option value={20}>20s (Relaxed)</option>
-                  <option value={30}>30s (Casual)</option>
+                  <option value={15}>15s (Standard)</option>
+                  <option value={20}>20s (Deliberate)</option>
+                  <option value={30}>30s (Leisurely)</option>
                   <option value={0}>Unlimited</option>
                 </select>
               </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-400">Mode</label>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-darkgreen/70 block">
+                  Elimination Mode
+                </label>
                 <select
                   value={gameModeSetting}
                   onChange={(e) => setGameModeSetting(e.target.value as any)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 font-medium text-xs focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-beige border border-darkgreen/20 rounded-xl px-3 py-2.5 text-darkgreen font-semibold text-xs focus:outline-none focus:border-midnight shadow-inner-warm"
                 >
                   <option value="strikes">3 Strikes</option>
                   <option value="sudden_death">Sudden Death</option>
-                  <option value="casual">Casual (No Out)</option>
+                  <option value="casual">Casual (Points only)</option>
                 </select>
               </div>
             </div>
 
-            {/* Imported Game Status / Import Section */}
+            {/* Imported Dossier Section */}
             {importedGame ? (
-              <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-3.5 flex items-start justify-between gap-3 text-left">
+              <div className="bg-rosy-tint border border-rosy/40 rounded-2xl p-3.5 flex items-start justify-between gap-3 text-left shadow-warm-xs">
                 <div className="flex items-start space-x-2.5">
-                  <div className="p-1.5 rounded-lg bg-amber-500/20 text-amber-400 mt-0.5 shrink-0">
+                  <div className="p-1.5 rounded-xl bg-rosy/20 text-rosy-dark mt-0.5 shrink-0">
                     <Upload className="w-4 h-4" />
                   </div>
                   <div>
                     <div className="flex items-center space-x-1.5">
-                      <span className="text-xs font-bold text-amber-400">
-                        Continuing Previous Game
+                      <span className="text-xs font-black uppercase tracking-wider text-rosy-burn">
+                        Continuing Match Dossier
                       </span>
-                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 font-bold">
+                      <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-rosy/20 text-rosy-dark font-bold font-mono">
                         {Object.keys(importedGame.burnedWords || {}).length} Words Burned
                       </span>
                     </div>
-                    <p className="text-[11px] text-amber-200/90 mt-0.5">
-                      Previously used words and verb roots are banned.
+                    <p className="text-[11px] text-darkgreen/80 mt-0.5 leading-snug">
+                      Old words & verb forms remain poisoned.
                       {importedGame.lastWord && (
                         <span> Starts with letter <strong>"{importedGame.lastLetter?.toUpperCase() || ''}"</strong>.</span>
                       )}
@@ -590,22 +602,22 @@ export const PassAndPlay: React.FC<PassAndPlayProps> = ({ onBackToHome, onOpenRu
                 <button
                   type="button"
                   onClick={clearImportedGame}
-                  className="text-xs text-rose-400 hover:text-rose-300 px-2 py-1 rounded bg-rose-950/60 hover:bg-rose-900/60 border border-rose-800 transition-colors font-semibold shrink-0"
+                  className="text-xs text-rosy-dark hover:text-darkgreen px-2.5 py-1 rounded-lg bg-beige hover:bg-beige-dark border border-rosy/30 transition-all font-semibold shrink-0"
                 >
                   Clear
                 </button>
               </div>
             ) : (
-              <div className="bg-slate-950/50 border border-dashed border-slate-700/80 rounded-2xl p-3.5 flex items-center justify-between gap-2 text-left">
-                <div className="flex items-center space-x-2">
-                  <Upload className="w-4 h-4 text-teal-400 shrink-0" />
+              <div className="bg-beige/60 border border-dashed border-darkgreen/20 rounded-2xl p-3.5 flex items-center justify-between gap-2 text-left">
+                <div className="flex items-center space-x-2.5">
+                  <Upload className="w-4 h-4 text-midnight shrink-0" />
                   <div>
-                    <span className="text-xs font-bold text-slate-200 block">Continue Previous Match?</span>
-                    <span className="text-[11px] text-slate-400">Import a saved .json file to ban old words.</span>
+                    <span className="text-xs font-bold text-darkgreen block">Continue Past Duel?</span>
+                    <span className="text-[11px] text-darkgreen/65">Import a .json match dossier to ban previous words.</span>
                   </div>
                 </div>
 
-                <label className="cursor-pointer px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-bold text-teal-300 border border-teal-500/30 rounded-xl transition-colors flex items-center space-x-1 shrink-0">
+                <label className="cursor-pointer px-3 py-1.5 bg-beige hover:bg-beige-dark text-xs font-bold text-midnight border border-midnight/30 rounded-xl transition-all flex items-center space-x-1 shrink-0 shadow-warm-xs active:scale-95">
                   <Upload className="w-3.5 h-3.5" />
                   <span>{isImporting ? 'Importing...' : 'Import .json'}</span>
                   <input
@@ -620,28 +632,27 @@ export const PassAndPlay: React.FC<PassAndPlayProps> = ({ onBackToHome, onOpenRu
             )}
 
             {importError && (
-              <div className="p-3 bg-rose-950/60 border border-rose-800 rounded-xl text-rose-300 text-xs flex items-center space-x-2">
-                <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+              <div className="p-3 bg-rosy-tint border border-rosy/50 rounded-xl text-rosy-dark text-xs flex items-center space-x-2 animate-shake">
+                <AlertCircle className="w-4 h-4 text-rosy-burn shrink-0" />
                 <span>{importError}</span>
               </div>
             )}
 
-            {/* Start Button */}
+            {/* Launch Match Trigger */}
             <button
               onClick={startMatch}
-              className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-amber-500 to-emerald-500 hover:from-amber-400 hover:to-emerald-400 font-black text-slate-950 text-base shadow-xl shadow-amber-950/40 transition-all transform active:scale-[0.99] flex items-center justify-center space-x-2"
+              className="w-full py-4 px-6 rounded-3xl bg-midnight hover:bg-midnight-hover font-serif text-lg font-bold text-beige shadow-warm-lg hover:shadow-warm-xl transition-all transform active:scale-[0.99] flex items-center justify-center space-x-2.5 border border-midnight-dark"
             >
               <Play className="w-5 h-5 fill-current" />
-              <span>Start Pass & Play Match</span>
+              <span>Commence Pass & Play Duel</span>
             </button>
           </div>
         ) : (
-          /* Active Game View */
+          /* Active Local Game View */
           roomState && (
             <div>
               <GameBoard
                 roomState={roomState}
-                // In local pass & play, it is always the current player's turn!
                 currentPlayer={roomState.players[roomState.currentTurnIndex]}
                 onSubmitWord={handleSubmitWord}
               />

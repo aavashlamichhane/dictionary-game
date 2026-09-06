@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { RoomState, Player } from '@dict-game/shared';
-import { Copy, Check, Users, Play, Crown, CheckCircle2, Circle, Settings2, Link2, Upload, AlertCircle } from 'lucide-react';
+import { Copy, Check, Users, Play, Crown, CheckCircle2, Circle, Settings2, Link2, Upload, AlertCircle, Sparkles } from 'lucide-react';
 import { sounds } from '../utils/audio.js';
 import { parseGameFile } from '../utils/gameStorage.js';
 
@@ -56,7 +56,7 @@ export const Lobby: React.FC<LobbyProps> = ({
       const data = await parseGameFile(file);
       await onImportGame(data);
     } catch (err: any) {
-      setImportError(err.message || 'Failed to import file');
+      setImportError(err.message || 'Failed to import match file');
       sounds.playError();
     } finally {
       setIsImporting(false);
@@ -65,58 +65,63 @@ export const Lobby: React.FC<LobbyProps> = ({
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto space-y-6">
-      {/* Room Code Card */}
-      <div className="bg-gradient-to-b from-slate-800/80 to-slate-900/90 border border-slate-700/80 rounded-3xl p-6 text-center shadow-xl">
-        <span className="text-xs font-bold uppercase tracking-widest text-emerald-400">
-          Room Lobby
-        </span>
-        <div className="mt-2 flex items-center justify-center space-x-3">
-          <span className="text-4xl sm:text-5xl font-black font-mono tracking-wider text-white">
+    <div className="w-full max-w-2xl mx-auto space-y-5 sm:space-y-6 animate-fade-in">
+      {/* Grand Parlor Room Accession Stamp */}
+      <div className="bg-beige-card border border-darkgreen/15 rounded-3xl p-6 text-center shadow-warm-md space-y-4">
+        <div className="inline-flex items-center space-x-1.5 px-3 py-0.5 rounded-full bg-midnight-tint border border-midnight/20 text-midnight text-[10px] font-bold uppercase tracking-widest">
+          <Sparkles className="w-3 h-3 text-midnight" />
+          <span>Multiplayer Parlor Lobby</span>
+        </div>
+
+        <div className="space-y-1">
+          <span className="text-xs font-serif italic text-darkgreen/60 block">
+            Room Accession Cipher
+          </span>
+          <span className="text-4xl sm:text-5xl font-mono font-black tracking-widest text-darkgreen">
             {roomState.code}
           </span>
         </div>
 
-        <div className="mt-4 flex flex-wrap items-center justify-center gap-2.5">
+        <div className="flex flex-wrap items-center justify-center gap-2.5 pt-1">
           <button
             onClick={handleCopyCode}
-            className="flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-bold text-slate-200 transition-colors"
+            className="flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-beige hover:bg-beige-dark border border-darkgreen/15 text-xs font-bold text-darkgreen transition-all shadow-warm-xs active:scale-95"
           >
-            {copiedCode ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
-            <span>{copiedCode ? 'Copied Code!' : 'Copy Code'}</span>
+            {copiedCode ? <Check className="w-4 h-4 text-moss-dark" /> : <Copy className="w-4 h-4" />}
+            <span>{copiedCode ? 'Cipher Copied!' : 'Copy Code'}</span>
           </button>
 
           <button
             onClick={handleCopyLink}
-            className="flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-xs font-bold text-emerald-300 transition-colors"
+            className="flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-midnight-tint hover:bg-midnight/15 border border-midnight/25 text-xs font-bold text-midnight transition-all shadow-warm-xs active:scale-95"
           >
-            {copiedLink ? <Check className="w-4 h-4 text-emerald-400" /> : <Link2 className="w-4 h-4" />}
-            <span>{copiedLink ? 'Copied Link!' : 'Copy Invite Link'}</span>
+            {copiedLink ? <Check className="w-4 h-4 text-midnight" /> : <Link2 className="w-4 h-4" />}
+            <span>{copiedLink ? 'Invite Link Copied!' : 'Copy Invite Link'}</span>
           </button>
         </div>
       </div>
 
-      {/* Imported Game Status / Import Button */}
+      {/* Imported Match Dossier Banner */}
       {roomState.importedMatchInfo ? (
-        <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 flex items-start justify-between gap-3 shadow-md">
+        <div className="bg-rosy-tint border border-rosy/40 rounded-3xl p-4 sm:p-5 flex items-start justify-between gap-3 shadow-warm-xs">
           <div className="flex items-start space-x-3">
-            <div className="p-2 rounded-xl bg-amber-500/20 text-amber-400 mt-0.5 shrink-0">
-              <Upload className="w-5 h-5" />
+            <div className="p-2 rounded-2xl bg-rosy/20 text-rosy-dark mt-0.5 shrink-0">
+              <Upload className="w-4 h-4" />
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <span className="text-xs font-black uppercase tracking-wider text-amber-400">
-                  Continuing Previous Match
+                <span className="text-xs font-black uppercase tracking-wider text-rosy-burn">
+                  Continuing Match Dossier
                 </span>
-                <span className="text-[10px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold">
-                  {roomState.importedMatchInfo.totalImportedWords} Words Burned
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-rosy/20 text-rosy-dark font-bold font-mono">
+                  {roomState.importedMatchInfo.totalImportedWords} Burned Words
                 </span>
               </div>
-              <p className="text-xs text-amber-200/90 mt-1">
-                All words and verb forms from the previous match are banned!
+              <p className="text-xs text-darkgreen/80 mt-1 leading-relaxed">
+                All words and conjugated verb roots from the previous session remain strictly banned.
                 {roomState.importedMatchInfo.lastWord && (
                   <span>
-                    {' '}Last word was <strong>"{roomState.importedMatchInfo.lastWord}"</strong> (Game starts with letter <strong>"{roomState.currentLetter.toUpperCase()}"</strong>).
+                    {' '}Terminal word was <strong>"{roomState.importedMatchInfo.lastWord}"</strong>. Game commences with letter <strong>"{roomState.currentLetter.toUpperCase()}"</strong>.
                   </span>
                 )}
               </p>
@@ -125,27 +130,27 @@ export const Lobby: React.FC<LobbyProps> = ({
           {isHost && (
             <button
               onClick={onClearImportedGame}
-              className="text-xs text-rose-400 hover:text-rose-300 px-2.5 py-1.5 rounded-lg bg-rose-950/60 hover:bg-rose-900/60 border border-rose-800 transition-colors font-semibold shrink-0"
+              className="text-xs text-rosy-dark hover:text-darkgreen px-3 py-1.5 rounded-xl bg-beige hover:bg-beige-dark border border-rosy/30 transition-all font-semibold shrink-0"
             >
               Clear
             </button>
           )}
         </div>
       ) : isHost ? (
-        <div className="bg-slate-900/60 border border-dashed border-slate-700/80 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="bg-beige-card/70 border border-dashed border-darkgreen/20 rounded-3xl p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-warm-xs">
           <div className="flex items-center space-x-3 text-center sm:text-left">
-            <div className="p-2 rounded-xl bg-slate-800 text-teal-400 shrink-0">
-              <Upload className="w-5 h-5" />
+            <div className="p-2 rounded-2xl bg-beige border border-darkgreen/15 text-midnight shrink-0">
+              <Upload className="w-4 h-4" />
             </div>
             <div>
-              <span className="text-sm font-bold text-slate-200 block">Continue Previous Game?</span>
-              <span className="text-xs text-slate-400">Import a exported .json file to carry over banned words & verb roots.</span>
+              <span className="text-xs font-bold text-darkgreen block">Resume Previous Session?</span>
+              <span className="text-[11px] text-darkgreen/65">Import a .json match dossier to carry forward banned words and verb roots.</span>
             </div>
           </div>
 
-          <label className="cursor-pointer px-4 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-bold text-teal-300 border border-teal-500/30 rounded-xl transition-colors flex items-center space-x-1.5 shrink-0">
-            <Upload className="w-4 h-4" />
-            <span>{isImporting ? 'Importing...' : 'Import Game File'}</span>
+          <label className="cursor-pointer px-4 py-2 bg-beige hover:bg-beige-dark text-xs font-bold text-midnight border border-midnight/30 rounded-xl transition-all shadow-warm-xs flex items-center space-x-1.5 shrink-0 active:scale-95">
+            <Upload className="w-3.5 h-3.5" />
+            <span>{isImporting ? 'Importing...' : 'Import Match .json'}</span>
             <input
               type="file"
               accept=".json"
@@ -158,21 +163,23 @@ export const Lobby: React.FC<LobbyProps> = ({
       ) : null}
 
       {importError && (
-        <div className="p-3 bg-rose-950/60 border border-rose-800 rounded-xl text-rose-300 text-xs flex items-center space-x-2">
-          <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+        <div className="p-3.5 bg-rosy-tint border border-rosy/50 rounded-2xl text-rosy-dark text-xs flex items-center space-x-2 animate-shake">
+          <AlertCircle className="w-4 h-4 text-rosy-burn shrink-0" />
           <span>{importError}</span>
         </div>
       )}
 
-      {/* Players List */}
-      <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
-          <div className="flex items-center space-x-2 text-slate-300 font-bold">
-            <Users className="w-5 h-5 text-emerald-400" />
-            <span>Players in Room ({roomState.players.length}/8)</span>
+      {/* Contenders Roster */}
+      <div className="bg-beige-card border border-darkgreen/15 rounded-3xl p-5 sm:p-6 shadow-warm-md space-y-4">
+        <div className="flex items-center justify-between border-b border-darkgreen/10 pb-3">
+          <div className="flex items-center space-x-2 text-darkgreen font-bold">
+            <Users className="w-4 h-4 text-midnight" />
+            <span className="text-xs font-black uppercase tracking-wider">
+              Contenders in Parlor ({roomState.players.length}/8)
+            </span>
           </div>
-          <span className="text-xs text-slate-400">
-            {roomState.players.length < 2 ? 'Need at least 2 players' : 'Ready to begin'}
+          <span className="text-[11px] text-darkgreen/60 font-medium">
+            {roomState.players.length < 2 ? 'Awaiting second contender...' : 'Quorum reached'}
           </span>
         </div>
 
@@ -180,35 +187,35 @@ export const Lobby: React.FC<LobbyProps> = ({
           {roomState.players.map((player) => (
             <div
               key={player.id}
-              className={`flex items-center justify-between p-3 rounded-2xl border transition-colors ${
+              className={`flex items-center justify-between p-3 rounded-2xl border transition-all ${
                 player.id === currentPlayer.id
-                  ? 'bg-slate-800/80 border-emerald-500/40'
-                  : 'bg-slate-950/60 border-slate-800'
+                  ? 'bg-beige-light border-midnight/40 shadow-warm-xs'
+                  : 'bg-beige/60 border-darkgreen/10'
               }`}
             >
               <div className="flex items-center space-x-3">
                 <div
-                  className="w-10 h-10 rounded-full flex items-center justify-center text-xl font-bold border shadow-inner"
+                  className="w-10 h-10 rounded-2xl flex items-center justify-center text-xl font-bold border shadow-warm-xs"
                   style={{
-                    backgroundColor: `${player.color}22`,
-                    borderColor: player.color
+                    backgroundColor: `${player.color}18`,
+                    borderColor: `${player.color}55`
                   }}
                 >
                   {player.avatar}
                 </div>
                 <div>
                   <div className="flex items-center space-x-1.5">
-                    <span className="font-bold text-slate-100 text-sm">{player.name}</span>
+                    <span className="font-bold text-darkgreen text-sm">{player.name}</span>
                     {player.id === currentPlayer.id && (
-                      <span className="text-[10px] bg-slate-700 text-slate-300 px-1.5 py-0.2 rounded font-semibold">
+                      <span className="text-[10px] bg-darkgreen/10 text-darkgreen px-1.5 py-0.2 rounded font-semibold uppercase tracking-wider">
                         You
                       </span>
                     )}
                   </div>
                   {player.isHost && (
-                    <span className="flex items-center space-x-1 text-[11px] text-amber-400 font-medium">
+                    <span className="flex items-center space-x-1 text-[11px] text-moss-dark font-semibold">
                       <Crown className="w-3 h-3" />
-                      <span>Host</span>
+                      <span>Match Host</span>
                     </span>
                   )}
                 </div>
@@ -216,17 +223,17 @@ export const Lobby: React.FC<LobbyProps> = ({
 
               <div>
                 {player.isHost ? (
-                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-lg bg-moss-tint text-moss-dark border border-moss/25">
                     Host
                   </span>
                 ) : player.isReady ? (
-                  <span className="flex items-center space-x-1 text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-md border border-emerald-500/20">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span className="flex items-center space-x-1 text-[11px] font-bold text-moss-dark bg-moss-tint px-2 py-1 rounded-lg border border-moss/30">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-moss" />
                     <span>Ready</span>
                   </span>
                 ) : (
-                  <span className="flex items-center space-x-1 text-[11px] font-medium text-slate-500 bg-slate-800 px-2 py-1 rounded-md">
-                    <Circle className="w-3.5 h-3.5" />
+                  <span className="flex items-center space-x-1 text-[11px] font-medium text-darkgreen/50 bg-beige px-2 py-1 rounded-lg border border-darkgreen/10">
+                    <Circle className="w-3 h-3 text-darkgreen/30" />
                     <span>Waiting</span>
                   </span>
                 )}
@@ -236,35 +243,37 @@ export const Lobby: React.FC<LobbyProps> = ({
         </div>
       </div>
 
-      {/* Room Settings Card */}
-      <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
-        <div className="flex items-center space-x-2 text-slate-300 font-bold border-b border-slate-800/80 pb-3">
-          <Settings2 className="w-5 h-5 text-teal-400" />
-          <span>Match Settings</span>
+      {/* Match Configuration Card */}
+      <div className="bg-beige-card border border-darkgreen/15 rounded-3xl p-5 sm:p-6 shadow-warm-md space-y-4">
+        <div className="flex items-center space-x-2 text-darkgreen font-bold border-b border-darkgreen/10 pb-3">
+          <Settings2 className="w-4 h-4 text-midnight" />
+          <span className="text-xs font-black uppercase tracking-wider">
+            Match Protocol Rules
+          </span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
           {/* Turn Timer Setting */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-              Turn Time Limit
+            <label className="text-[10px] font-bold uppercase tracking-wider text-darkgreen/70 block">
+              Turn Inscription Time
             </label>
             {isHost ? (
               <select
                 value={roomState.settings.turnTimeLimit}
                 onChange={(e) => onUpdateSettings({ turnTimeLimit: Number(e.target.value) })}
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 font-medium focus:outline-none focus:border-emerald-500"
+                className="w-full bg-beige border border-darkgreen/20 rounded-xl px-3 py-2.5 text-darkgreen font-semibold text-xs focus:outline-none focus:border-midnight shadow-inner-warm"
               >
-                <option value={10}>10 seconds (Speed)</option>
-                <option value={15}>15 seconds (Standard)</option>
-                <option value={20}>20 seconds (Relaxed)</option>
-                <option value={30}>30 seconds (Casual)</option>
-                <option value={0}>Unlimited</option>
+                <option value={10}>10s (Speed Duel)</option>
+                <option value={15}>15s (Standard)</option>
+                <option value={20}>20s (Deliberate)</option>
+                <option value={30}>30s (Leisurely)</option>
+                <option value={0}>Unlimited Time</option>
               </select>
             ) : (
-              <div className="bg-slate-800/60 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 font-medium">
+              <div className="bg-beige/80 border border-darkgreen/15 rounded-xl px-3 py-2.5 text-darkgreen font-semibold text-xs">
                 {roomState.settings.turnTimeLimit > 0
-                  ? `${roomState.settings.turnTimeLimit} seconds`
+                  ? `${roomState.settings.turnTimeLimit} Seconds`
                   : 'Unlimited'}
               </div>
             )}
@@ -272,21 +281,21 @@ export const Lobby: React.FC<LobbyProps> = ({
 
           {/* Game Mode */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-              Elimination Mode
+            <label className="text-[10px] font-bold uppercase tracking-wider text-darkgreen/70 block">
+              Elimination Protocol
             </label>
             {isHost ? (
               <select
                 value={roomState.settings.gameMode}
                 onChange={(e) => onUpdateSettings({ gameMode: e.target.value })}
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 font-medium focus:outline-none focus:border-emerald-500"
+                className="w-full bg-beige border border-darkgreen/20 rounded-xl px-3 py-2.5 text-darkgreen font-semibold text-xs focus:outline-none focus:border-midnight shadow-inner-warm"
               >
-                <option value="strikes">3 Strikes (Standard)</option>
-                <option value="sudden_death">Sudden Death (1 mistake = out)</option>
-                <option value="casual">Casual (Points only, no elimination)</option>
+                <option value="strikes">3 Strikes (Standard Elimination)</option>
+                <option value="sudden_death">Sudden Death (1 error = Defeat)</option>
+                <option value="casual">Casual (Points tally, no elimination)</option>
               </select>
             ) : (
-              <div className="bg-slate-800/60 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 font-medium capitalize">
+              <div className="bg-beige/80 border border-darkgreen/15 rounded-xl px-3 py-2.5 text-darkgreen font-semibold text-xs capitalize">
                 {roomState.settings.gameMode.replace('_', ' ')}
               </div>
             )}
@@ -294,28 +303,28 @@ export const Lobby: React.FC<LobbyProps> = ({
         </div>
       </div>
 
-      {/* Start / Ready Button Area */}
-      <div className="pt-2">
+      {/* Start / Ready Primary Trigger */}
+      <div className="pt-1">
         {isHost ? (
           <button
             onClick={onStartGame}
             disabled={roomState.players.length < 1}
-            className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 font-black text-slate-950 text-lg shadow-xl shadow-emerald-950/40 transition-all transform active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+            className="w-full py-4 px-6 rounded-3xl bg-midnight hover:bg-midnight-hover font-serif text-lg font-bold text-beige shadow-warm-lg hover:shadow-warm-xl transition-all transform active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center space-x-2.5 border border-midnight-dark"
           >
-            <Play className="w-6 h-6 fill-current" />
-            <span>Start Game</span>
+            <Play className="w-5 h-5 fill-current" />
+            <span>Commence Word Battle</span>
           </button>
         ) : (
           <button
             onClick={onToggleReady}
-            className={`w-full py-4 px-6 rounded-2xl font-black text-lg transition-all shadow-xl flex items-center justify-center space-x-2 ${
+            className={`w-full py-4 px-6 rounded-3xl font-bold text-base transition-all shadow-warm-md flex items-center justify-center space-x-2.5 border ${
               currentPlayer.isReady
-                ? 'bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-emerald-500/40'
-                : 'bg-emerald-600 hover:bg-emerald-500 text-slate-950'
+                ? 'bg-beige hover:bg-beige-dark text-moss-dark border-moss/40'
+                : 'bg-midnight hover:bg-midnight-hover text-beige border-midnight-dark'
             }`}
           >
-            <CheckCircle2 className="w-6 h-6" />
-            <span>{currentPlayer.isReady ? "I'm Ready (Tap to cancel)" : "Ready Up!"}</span>
+            <CheckCircle2 className="w-5 h-5" />
+            <span>{currentPlayer.isReady ? "Ready to Inscribe (Tap to Cancel)" : "Declare Readiness"}</span>
           </button>
         )}
       </div>

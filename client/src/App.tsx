@@ -48,39 +48,44 @@ export function App() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100 font-sans selection:bg-emerald-500 selection:text-slate-950">
-      {view === 'home' && (
-        <>
-          <Header
-            isConnected={socketHook.isConnected}
+    <div className="min-h-screen flex flex-col bg-beige text-darkgreen font-sans selection:bg-midnight selection:text-beige relative overflow-x-hidden">
+      {/* Subtle editorial watermark / fine background motif */}
+      <div className="fixed inset-0 pointer-events-none opacity-[0.035] bg-[radial-gradient(#0A3323_1px,transparent_1px)] [background-size:24px_24px] z-0" />
+
+      <div className="relative z-10 flex-1 flex flex-col">
+        {view === 'home' && (
+          <>
+            <Header
+              isConnected={socketHook.isConnected}
+              onOpenRules={() => setIsRulesOpen(true)}
+            />
+            <main className="flex-1 flex items-center justify-center p-4 sm:p-6 md:p-8">
+              <Home
+                onCreateRoom={handleCreateRoom}
+                onJoinRoom={handleJoinRoom}
+                onStartPassAndPlay={() => setView('pass_and_play')}
+                onOpenRules={() => setIsRulesOpen(true)}
+                initialRoomCode={urlRoomCode}
+              />
+            </main>
+          </>
+        )}
+
+        {view === 'online' && (
+          <OnlineGame
+            socketHook={socketHook}
+            onLeave={handleLeaveOnline}
             onOpenRules={() => setIsRulesOpen(true)}
           />
-          <main className="flex-1 flex items-center justify-center p-4">
-            <Home
-              onCreateRoom={handleCreateRoom}
-              onJoinRoom={handleJoinRoom}
-              onStartPassAndPlay={() => setView('pass_and_play')}
-              onOpenRules={() => setIsRulesOpen(true)}
-              initialRoomCode={urlRoomCode}
-            />
-          </main>
-        </>
-      )}
+        )}
 
-      {view === 'online' && (
-        <OnlineGame
-          socketHook={socketHook}
-          onLeave={handleLeaveOnline}
-          onOpenRules={() => setIsRulesOpen(true)}
-        />
-      )}
-
-      {view === 'pass_and_play' && (
-        <PassAndPlay
-          onBackToHome={() => setView('home')}
-          onOpenRules={() => setIsRulesOpen(true)}
-        />
-      )}
+        {view === 'pass_and_play' && (
+          <PassAndPlay
+            onBackToHome={() => setView('home')}
+            onOpenRules={() => setIsRulesOpen(true)}
+          />
+        )}
+      </div>
 
       <RulesModal
         isOpen={isRulesOpen}

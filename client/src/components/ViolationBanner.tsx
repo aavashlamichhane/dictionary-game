@@ -1,6 +1,6 @@
 import React from 'react';
 import { Violation } from '@dict-game/shared';
-import { AlertTriangle, Flame, Clock, XCircle } from 'lucide-react';
+import { AlertTriangle, Flame, Clock, XCircle, X } from 'lucide-react';
 
 interface ViolationBannerProps {
   violation: Violation | null;
@@ -13,63 +13,65 @@ export const ViolationBanner: React.FC<ViolationBannerProps> = ({ violation, onD
   const getIcon = () => {
     switch (violation.type) {
       case 'VERB_FORM_BURNED':
-        return <Flame className="w-6 h-6 text-rose-400 shrink-0 animate-bounce" />;
+        return <Flame className="w-5 h-5 text-rosy-burn shrink-0 animate-bounce" />;
       case 'TIMEOUT':
-        return <Clock className="w-6 h-6 text-amber-400 shrink-0" />;
+        return <Clock className="w-5 h-5 text-rosy-burn shrink-0" />;
       case 'DUPLICATE_WORD':
-        return <AlertTriangle className="w-6 h-6 text-amber-400 shrink-0" />;
+        return <AlertTriangle className="w-5 h-5 text-rosy-dark shrink-0" />;
       default:
-        return <XCircle className="w-6 h-6 text-rose-400 shrink-0" />;
+        return <XCircle className="w-5 h-5 text-rosy-burn shrink-0" />;
     }
   };
 
   const getBadgeTitle = () => {
     switch (violation.type) {
       case 'VERB_FORM_BURNED':
-        return '🔥 VERB FORM BURNED';
+        return 'Verb Form Burned';
       case 'DUPLICATE_WORD':
-        return '⚠️ DUPLICATE WORD';
+        return 'Duplicate Inscription';
       case 'WRONG_START_LETTER':
-        return '❌ WRONG START LETTER';
+        return 'Initial Letter Mismatch';
       case 'INVALID_DICTIONARY_WORD':
-        return '📖 NOT IN DICTIONARY';
+        return 'Unrecognized Lexicon Entry';
       case 'TIMEOUT':
-        return '⏰ TIME EXPIRED';
+        return 'Inscription Window Expired';
       case 'TOO_SHORT':
-        return '📏 TOO SHORT';
+        return 'Insufficient Letter Count';
       default:
-        return 'RULE VIOLATION';
+        return 'Rule Infringement';
     }
   };
 
   return (
-    <div className="w-full bg-rose-950/60 border-2 border-rose-500/70 rounded-2xl p-4 shadow-lg shadow-rose-950/40 animate-shake mb-4">
+    <div className="w-full bg-rosy-tint border-2 border-rosy/50 rounded-2xl p-4 shadow-warm-sm animate-shake mb-4 transition-all">
       <div className="flex items-start justify-between">
         <div className="flex items-start space-x-3.5">
-          {getIcon()}
+          <div className="p-2 rounded-xl bg-rosy/20 mt-0.5">
+            {getIcon()}
+          </div>
           <div>
             <div className="flex items-center space-x-2">
-              <span className="text-xs font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40">
+              <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-rosy/25 text-rosy-burn border border-rosy/40">
                 {getBadgeTitle()}
               </span>
-              <span className="text-xs text-rose-300/70 font-mono">
+              <span className="text-xs text-darkgreen/60 font-mono font-semibold">
                 Turn #{violation.turnNumber}
               </span>
             </div>
 
-            <p className="mt-1.5 text-sm font-medium text-rose-100 leading-snug">
+            <p className="mt-1 text-sm font-semibold text-darkgreen leading-snug">
               {violation.message}
             </p>
 
-            {/* Accountability context */}
+            {/* Inscription Accountability Context */}
             {violation.originalWord && violation.originalPlayerName && (
-              <div className="mt-2 text-xs text-rose-300/80 bg-rose-950/70 border border-rose-800/60 px-3 py-1.5 rounded-lg flex items-center space-x-2">
-                <span>📍 Previously used:</span>
-                <span className="font-bold text-white uppercase tracking-wide">
+              <div className="mt-2 text-xs text-darkgreen/80 bg-beige-card border border-rosy/35 px-3 py-1.5 rounded-xl flex items-center space-x-2 shadow-warm-xs">
+                <span>📍 Inscribed previously:</span>
+                <span className="font-bold text-darkgreen font-mono uppercase tracking-wide">
                   "{violation.originalWord}"
                 </span>
                 <span>by</span>
-                <span className="font-bold text-amber-300">{violation.originalPlayerName}</span>
+                <span className="font-bold text-midnight">{violation.originalPlayerName}</span>
                 <span>on Turn #{violation.originalTurn}</span>
               </div>
             )}
@@ -79,9 +81,9 @@ export const ViolationBanner: React.FC<ViolationBannerProps> = ({ violation, onD
         {onDismiss && (
           <button
             onClick={onDismiss}
-            className="text-rose-400 hover:text-rose-200 text-sm font-semibold p-1 hover:bg-rose-900/50 rounded-lg transition-colors"
+            className="text-darkgreen/50 hover:text-darkgreen p-1 hover:bg-beige rounded-lg transition-colors"
           >
-            ✕
+            <X className="w-4 h-4" />
           </button>
         )}
       </div>

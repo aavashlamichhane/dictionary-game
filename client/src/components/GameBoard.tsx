@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { RoomState, Player } from '@dict-game/shared';
-import { Send, Clock, Skull, AlertCircle } from 'lucide-react';
+import { Send, Clock, Skull, AlertCircle, CheckCircle2, Sparkles, Feather } from 'lucide-react';
 import { ViolationBanner } from './ViolationBanner.js';
 import { WordChain } from './WordChain.js';
 
@@ -38,7 +38,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
     setWordInput('');
   };
 
-  // Timer percentage
+  // Timer calculations
   const maxTime = roomState.settings.turnTimeLimit || 15;
   const timeRemaining = roomState.timeRemaining;
   const progressPercent = maxTime > 0 ? Math.max(0, Math.min(100, (timeRemaining / maxTime) * 100)) : 100;
@@ -46,9 +46,9 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   const isTimeCritical = maxTime > 0 && timeRemaining <= 3;
 
   return (
-    <div className="w-full max-w-2xl mx-auto space-y-5">
-      {/* Top Player Roster Bar */}
-      <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-3 shadow-md flex items-center justify-between overflow-x-auto gap-2">
+    <div className="w-full max-w-2xl mx-auto space-y-5 sm:space-y-6 animate-fade-in">
+      {/* Contenders Gallery Ribbon */}
+      <div className="bg-beige-card border border-darkgreen/15 rounded-2xl p-3 shadow-warm-xs flex items-center justify-between overflow-x-auto gap-2 scrollbar-none">
         {roomState.players.map((p) => {
           const isActive = p.id === activePlayer?.id;
           return (
@@ -56,17 +56,17 @@ export const GameBoard: React.FC<GameBoardProps> = ({
               key={p.id}
               className={`flex items-center space-x-2 px-3 py-1.5 rounded-xl border transition-all shrink-0 ${
                 isActive
-                  ? 'bg-slate-800 border-emerald-500 shadow-md shadow-emerald-950/40 ring-2 ring-emerald-500/50'
+                  ? 'bg-beige-dark border-midnight shadow-warm ring-2 ring-midnight/30'
                   : p.isEliminated
-                  ? 'bg-slate-950/40 border-slate-900 opacity-40'
-                  : 'bg-slate-950/70 border-slate-800'
+                  ? 'bg-beige/40 border-darkgreen/10 opacity-45 line-through'
+                  : 'bg-beige/70 border-darkgreen/10'
               }`}
             >
               <div
-                className="w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold border"
+                className="w-7 h-7 rounded-xl flex items-center justify-center text-sm font-bold border shadow-warm-xs"
                 style={{
-                  backgroundColor: `${p.color}22`,
-                  borderColor: p.color
+                  backgroundColor: `${p.color}20`,
+                  borderColor: `${p.color}60`
                 }}
               >
                 {p.avatar}
@@ -74,14 +74,14 @@ export const GameBoard: React.FC<GameBoardProps> = ({
 
               <div className="text-left">
                 <div className="flex items-center space-x-1">
-                  <span className="text-xs font-bold text-slate-200">{p.name}</span>
-                  {p.isEliminated && <Skull className="w-3 h-3 text-rose-500" />}
+                  <span className="text-xs font-bold text-darkgreen">{p.name}</span>
+                  {p.isEliminated && <Skull className="w-3 h-3 text-rosy-dark" />}
                 </div>
-                <div className="flex items-center space-x-1.5 text-[10px] text-slate-400">
-                  <span className="font-mono text-emerald-400 font-bold">{p.score} pts</span>
+                <div className="flex items-center space-x-1.5 text-[10px] text-darkgreen/70">
+                  <span className="font-mono text-midnight font-bold">{p.score} pts</span>
                   {roomState.settings.gameMode === 'strikes' && p.strikes > 0 && (
-                    <span className="text-rose-400 font-bold">
-                      {'⚠️'.repeat(p.strikes)}
+                    <span className="text-rosy-dark font-bold tracking-tight">
+                      {'✕'.repeat(p.strikes)}
                     </span>
                   )}
                 </div>
@@ -91,78 +91,85 @@ export const GameBoard: React.FC<GameBoardProps> = ({
         })}
       </div>
 
-      {/* Violation Alert Banner if recent violation occurred */}
+      {/* Violation Alert Banner */}
       <ViolationBanner violation={roomState.recentViolation} />
 
-      {/* Central Action Arena */}
-      <div className="bg-gradient-to-b from-slate-900 via-slate-900/95 to-slate-950 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
-        {/* Turn Status & Required Letter */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          {/* Active Turn Indicator */}
-          <div className="flex items-center space-x-3 text-center sm:text-left">
+      {/* Central Lexicon Arena */}
+      <div className="bg-beige-card border border-darkgreen/20 rounded-3xl p-6 sm:p-8 shadow-warm-lg space-y-6 relative overflow-hidden">
+        {/* Arena Header: Active Contender & Keystone Letter */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-5">
+          {/* Active Player Status */}
+          <div className="flex items-center space-x-3.5 text-center sm:text-left">
             <div
-              className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl font-bold border shadow-lg ${
-                isMyTurn ? 'ring-4 ring-emerald-500/30 animate-pulse-fast' : ''
+              className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl font-bold border shadow-warm-sm transition-transform ${
+                isMyTurn ? 'ring-4 ring-midnight/25 scale-105 animate-pulse-fast' : ''
               }`}
               style={{
-                backgroundColor: `${activePlayer?.color || '#10b981'}22`,
-                borderColor: activePlayer?.color || '#10b981'
+                backgroundColor: `${activePlayer?.color || '#105666'}20`,
+                borderColor: activePlayer?.color || '#105666'
               }}
             >
               {activePlayer?.avatar}
             </div>
             <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                {isMyTurn ? '🌟 Your Turn!' : `${activePlayer?.name}'s Turn`}
-              </span>
-              <p className="text-xl sm:text-2xl font-black text-white">
-                {isMyTurn ? 'Enter a word' : `Waiting for ${activePlayer?.name}...`}
-              </p>
+              <div className="flex items-center space-x-1.5 justify-center sm:justify-start">
+                <span className="text-[10px] font-black uppercase tracking-widest text-moss-dark">
+                  {isMyTurn ? 'Your Turn to Inscribe' : `Contender Turn`}
+                </span>
+                {isMyTurn && (
+                  <span className="w-2 h-2 rounded-full bg-moss animate-ping" />
+                )}
+              </div>
+              <h2 className="text-xl sm:text-2xl font-serif font-black text-darkgreen leading-tight">
+                {isMyTurn ? 'Inscribe your word' : `${activePlayer?.name}'s Inscription`}
+              </h2>
             </div>
           </div>
 
-          {/* Huge Required Letter Box */}
-          <div className="flex items-center space-x-3 bg-slate-950 border border-slate-800 px-5 py-3 rounded-2xl shadow-inner">
+          {/* Monumental Keystone Letter Block */}
+          <div className="flex items-center space-x-3 bg-beige/90 border border-darkgreen/20 px-4 py-2.5 rounded-2xl shadow-inner-warm">
             <div className="text-right">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-                Must Start With
+              <span className="text-[9px] font-bold uppercase tracking-widest text-darkgreen/60 block">
+                Required
               </span>
-              <span className="text-xs text-slate-400">Letter</span>
+              <span className="text-xs font-serif italic text-darkgreen/80">
+                Starting Letter
+              </span>
             </div>
-            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-400 flex items-center justify-center text-3xl font-black text-slate-950 shadow-md">
+            <div className="w-14 h-14 rounded-2xl bg-midnight flex items-center justify-center text-3xl font-serif font-black text-beige shadow-warm border border-midnight-dark">
               {currentLetter}
             </div>
           </div>
         </div>
 
-        {/* Turn Countdown Timer (if enabled) */}
+        {/* Turn Countdown Tension Bar */}
         {roomState.settings.turnTimeLimit > 0 && (
           <div className="space-y-1.5">
             <div className="flex items-center justify-between text-xs font-bold">
-              <span className="flex items-center space-x-1 text-slate-400">
-                <Clock className="w-3.5 h-3.5" />
-                <span>Time Remaining</span>
+              <span className="flex items-center space-x-1.5 text-darkgreen/70">
+                <Clock className="w-3.5 h-3.5 text-moss-dark" />
+                <span className="uppercase tracking-wider text-[10px]">Time Remaining</span>
               </span>
               <span
-                className={`font-mono text-sm ${
+                className={`font-mono text-sm font-bold ${
                   isTimeCritical
-                    ? 'text-rose-400 animate-ping'
+                    ? 'text-rosy-burn animate-bounce'
                     : isTimeUrgent
-                    ? 'text-amber-400 font-bold'
-                    : 'text-emerald-400'
+                    ? 'text-rosy-dark font-black'
+                    : 'text-midnight'
                 }`}
               >
                 {timeRemaining}s
               </span>
             </div>
-            <div className="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden">
+            <div className="w-full h-2.5 bg-beige-dark/80 rounded-full overflow-hidden p-0.5 border border-darkgreen/15">
               <div
                 className={`h-full transition-all duration-1000 ease-linear rounded-full ${
                   isTimeCritical
-                    ? 'bg-rose-500'
+                    ? 'bg-rosy-burn'
                     : isTimeUrgent
-                    ? 'bg-amber-400'
-                    : 'bg-emerald-500'
+                    ? 'bg-rosy'
+                    : 'bg-moss'
                 }`}
                 style={{ width: `${progressPercent}%` }}
               />
@@ -170,7 +177,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
           </div>
         )}
 
-        {/* Word Input Form */}
+        {/* Word Inscription Input Form */}
         <form onSubmit={handleSubmit} className="space-y-3">
           <div className="relative flex items-center">
             <input
@@ -181,50 +188,53 @@ export const GameBoard: React.FC<GameBoardProps> = ({
               disabled={!isMyTurn}
               placeholder={
                 isMyTurn
-                  ? `Type a word starting with "${currentLetter}"...`
-                  : `Waiting for ${activePlayer?.name}...`
+                  ? `Inscribe word starting with "${currentLetter}"...`
+                  : `Waiting for ${activePlayer?.name} to inscribe...`
               }
               autoComplete="off"
               autoCorrect="off"
               spellCheck="false"
-              className={`w-full py-4 pl-5 pr-28 rounded-2xl text-lg sm:text-xl font-bold font-mono tracking-wide focus:outline-none transition-all ${
+              className={`w-full py-4 pl-5 pr-32 rounded-2xl text-lg sm:text-xl font-mono font-bold tracking-wide focus:outline-none transition-all ${
                 isMyTurn
-                  ? 'bg-slate-800/90 border-2 border-emerald-500/70 text-white placeholder:text-slate-500 shadow-lg shadow-emerald-950/20'
-                  : 'bg-slate-950/60 border border-slate-800 text-slate-500 placeholder:text-slate-600 cursor-not-allowed'
+                  ? 'bg-beige/90 border-2 border-midnight text-darkgreen placeholder:text-darkgreen/35 shadow-inner-warm ring-2 ring-midnight/15'
+                  : 'bg-beige/40 border border-darkgreen/15 text-darkgreen/40 placeholder:text-darkgreen/30 cursor-not-allowed'
               }`}
             />
 
             <button
               type="submit"
               disabled={!isMyTurn || wordInput.trim().length < (roomState.settings.minWordLength || 3)}
-              className="absolute right-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 text-slate-950 font-black text-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center space-x-1.5 shadow-md shadow-emerald-950/30"
+              className="absolute right-2 px-5 py-2.5 rounded-xl bg-midnight hover:bg-midnight-hover disabled:bg-beige-dark text-beige font-bold text-xs uppercase tracking-wider transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center space-x-1.5 shadow-warm hover:shadow-warm-md active:scale-95 border border-midnight-dark"
             >
-              <span>Submit</span>
-              <Send className="w-4 h-4" />
+              <span>Inscribe</span>
+              <Send className="w-3.5 h-3.5" />
             </button>
           </div>
 
-          {/* Typing helper & hints */}
+          {/* Real-Time Typographic Feedback */}
           {isMyTurn && wordInput.length > 0 && (
-            <div className="flex items-center justify-between text-xs px-2 text-slate-400">
+            <div className="flex items-center justify-between text-xs px-2 pt-0.5">
               <div className="flex items-center space-x-1.5">
                 {wordInput.charAt(0).toUpperCase() === currentLetter ? (
-                  <span className="text-emerald-400 font-semibold">✓ Correct starting letter</span>
+                  <span className="text-moss-dark font-bold flex items-center space-x-1">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-moss" />
+                    <span>Valid initial letter "{currentLetter}"</span>
+                  </span>
                 ) : (
-                  <span className="text-rose-400 font-semibold flex items-center space-x-1">
+                  <span className="text-rosy-burn font-bold flex items-center space-x-1">
                     <AlertCircle className="w-3.5 h-3.5" />
-                    <span>Must start with "{currentLetter}"</span>
+                    <span>Must begin with "{currentLetter}"</span>
                   </span>
                 )}
               </div>
-              <span className="font-mono">{wordInput.length} letters</span>
+              <span className="font-mono text-darkgreen/70 font-semibold">{wordInput.length} letters</span>
             </div>
           )}
         </form>
       </div>
 
-      {/* Word Chain History Component */}
-      <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 shadow-xl">
+      {/* Word Chain Ledger Stream */}
+      <div className="bg-beige-card border border-darkgreen/15 rounded-3xl p-5 sm:p-6 shadow-warm-md">
         <WordChain chain={roomState.chain} />
       </div>
     </div>
