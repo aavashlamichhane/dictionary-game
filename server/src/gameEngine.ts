@@ -116,9 +116,25 @@ export async function processWordSubmission(
     });
   }
 
-  // 3. Exact word already used?
+  // 3. Exact word or burned verb form in burnedWords?
   if (room.burnedWords[word]) {
     const orig = room.burnedWords[word];
+    if (orig.isFormOfRoot) {
+      return handleViolation(room, player, {
+        type: 'VERB_FORM_BURNED',
+        message: `Verb form violation! '${word}' is an inflection of root verb '${orig.isFormOfRoot}', which was already burned when ${orig.playerName} played '${orig.word}' on Turn ${orig.turn}!`,
+        offendingWord: word,
+        playerId: player.id,
+        playerName: player.name,
+        turnNumber: room.turnCount,
+        timestamp: Date.now(),
+        originalTurn: orig.turn,
+        originalPlayerName: orig.playerName,
+        originalWord: orig.word,
+        verbRoot: orig.isFormOfRoot
+      });
+    }
+
     return handleViolation(room, player, {
       type: 'DUPLICATE_WORD',
       message: `Word '${word}' was already used by ${orig.playerName} on Turn ${orig.turn}!`,
@@ -232,7 +248,8 @@ export async function processWordSubmission(
           turn: room.turnCount,
           playerId: player.id,
           playerName: player.name,
-          word: f
+          word, // original word played
+          isFormOfRoot: root
         };
       }
     }

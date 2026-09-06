@@ -63,7 +63,8 @@ export interface BurnedWordRecord {
   turn: number;
   playerId: string;
   playerName: string;
-  word: string;
+  word: string; // The actual word that was played
+  isFormOfRoot?: string; // If burned via root verb family
 }
 
 export interface BurnedVerbRecord {
