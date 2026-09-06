@@ -140,7 +140,22 @@ io.on('connection', (socket) => {
   });
 });
 
-const PORT = process.env.PORT || 3001;
-httpServer.listen(PORT, () => {
-  console.log(`🚀 WordChain Server listening on http://localhost:${PORT}`);
+const PORT = Number(process.env.PORT) || 3001;
+const server = httpServer.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 WordChain Server listening on http://0.0.0.0:${PORT}`);
 });
+
+const shutdown = (signal: string) => {
+  console.log(`\n🛑 Received ${signal}, shutting down gracefully...`);
+  server.close(() => {
+    console.log('Server stopped');
+    process.exit(0);
+  });
+  setTimeout(() => {
+    console.error('Forcefully stopping server');
+    process.exit(1);
+  }, 5000).unref();
+};
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
