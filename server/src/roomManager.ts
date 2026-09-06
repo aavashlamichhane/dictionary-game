@@ -6,11 +6,14 @@ import {
   CreateRoomPayload,
   JoinRoomPayload,
   ClientToServerEvents,
-  ServerToClientEvents
+  ServerToClientEvents,
+  ExportedGameData
 } from '@dict-game/shared';
 import {
   generateRoomCode,
   createInitialRoom,
+  applyImportedGame,
+  clearImportedGame,
   processWordSubmission,
   handleTimeout,
   resetGame,
@@ -49,7 +52,7 @@ export class RoomManager {
       wordsPlayedCount: 0
     };
 
-    const room = createInitialRoom(code, host, payload.settings);
+    const room = createInitialRoom(code, host, payload.settings, payload.importedGame);
     this.rooms.set(code, room);
     this.socketToRoom.set(socket.id, code);
 
@@ -155,7 +158,6 @@ export class RoomManager {
 
       // Check if it was their turn
       if (room.currentTurnIndex === playerIndex) {
-        // Move to next player
         this.stopTimer(code);
         const next = (room.currentTurnIndex + 1) % room.players.length;
         room.currentTurnIndex = next;
@@ -175,6 +177,32 @@ export class RoomManager {
       }
     }
 
+    this.broadcastRoomUpdate(code);
+  }
+
+  public importGame(
+    socket: Socket<ClientToServerEvents, ServerToClientEvents>,
+    gameData: ExportedGameData
+  ): { success: boolean; error?: string } {
+    const code = this.socketToRoom.get(socket.id);
+    if (!code) return { success: false, error: 'Not in a room' };
+    const room = this.rooms.get(code);
+    if (!room) return { success: false, error: 'Room not found' };
+    if (room.hostId !== socket.id) return { success: false, error: 'Only the host can import a previous game' };
+    if (room.status !== 'lobby') return { success: false, error: 'Cannot import during an active match' };
+
+    applyImportedGame(room, gameData);
+    this.broadcastRoomUpdate(code);
+    return { success: true };
+  }
+
+  public clearImportedGame(socket: Socket<ClientToServerEvents, ServerToClientEvents>): void {
+    const code = this.socketToRoom.get(socket.id);
+    if (!code) return;
+    const room = this.rooms.get(code);
+    if (!room || room.hostId !== socket.id || room.status !== 'lobby') return;
+
+    clearImportedGame(room);
     this.broadcastRoomUpdate(code);
   }
 

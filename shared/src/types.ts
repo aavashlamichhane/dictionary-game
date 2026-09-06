@@ -32,6 +32,7 @@ export interface WordEntry {
   partOfSpeech?: string;
   verbRoot?: string;
   isVerb: boolean;
+  isImported?: boolean; // Word imported from a previous match
 }
 
 export type ViolationType =
@@ -65,6 +66,7 @@ export interface BurnedWordRecord {
   playerName: string;
   word: string; // The actual word that was played
   isFormOfRoot?: string; // If burned via root verb family
+  isImported?: boolean; // Carried over from imported previous match
 }
 
 export interface BurnedVerbRecord {
@@ -73,6 +75,27 @@ export interface BurnedVerbRecord {
   playerName: string;
   originalWord: string;
   verbRoot: string;
+  isImported?: boolean;
+}
+
+export interface ImportedMatchInfo {
+  totalImportedWords: number;
+  lastWord?: string;
+  lastLetter?: string;
+  importedAt: number;
+}
+
+export interface ExportedGameData {
+  version: '1.0';
+  exportedAt: number;
+  roomCode?: string;
+  gameMode?: GameMode;
+  totalWords: number;
+  lastWord?: string;
+  lastLetter?: string;
+  chain: WordEntry[];
+  burnedWords: Record<string, BurnedWordRecord>;
+  burnedVerbRoots: Record<string, BurnedVerbRecord>;
 }
 
 export interface RoomState {
@@ -91,6 +114,7 @@ export interface RoomState {
   recentViolation: Violation | null;
   winner: Player | null;
   turnCount: number;
+  importedMatchInfo?: ImportedMatchInfo | null;
 }
 
 export interface CreateRoomPayload {
@@ -98,6 +122,7 @@ export interface CreateRoomPayload {
   avatar: string;
   color: string;
   settings?: Partial<GameSettings>;
+  importedGame?: ExportedGameData;
 }
 
 export interface JoinRoomPayload {
@@ -129,6 +154,8 @@ export interface ClientToServerEvents {
   'room:update_settings': (settings: Partial<GameSettings>) => void;
   'room:toggle_ready': () => void;
   'room:start_game': () => void;
+  'room:import_game': (payload: { gameData: ExportedGameData }, callback: (response: { success: boolean; error?: string }) => void) => void;
+  'room:clear_imported_game': () => void;
   'game:submit_word': (payload: SubmitWordPayload) => void;
   'game:restart': () => void;
 }

@@ -109,6 +109,19 @@ io.on('connection', (socket) => {
     roomManager.startGame(socket);
   });
 
+  socket.on('room:import_game', (payload, callback) => {
+    try {
+      const result = roomManager.importGame(socket, payload.gameData);
+      callback(result);
+    } catch (err: any) {
+      callback({ success: false, error: err?.message || 'Failed to import game' });
+    }
+  });
+
+  socket.on('room:clear_imported_game', () => {
+    roomManager.clearImportedGame(socket);
+  });
+
   socket.on('game:submit_word', (payload) => {
     roomManager.submitWord(socket, payload.word);
   });

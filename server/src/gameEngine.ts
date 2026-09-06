@@ -3,7 +3,8 @@ import {
   Player,
   WordEntry,
   Violation,
-  GameSettings
+  GameSettings,
+  ExportedGameData
 } from '@dict-game/shared';
 import { verifyWord } from './dictionary.js';
 import { analyzeVerb } from './lemmatizer.js';
@@ -24,10 +25,66 @@ export function generateRoomCode(): string {
   return `WORD-${code}`;
 }
 
+export function applyImportedGame(room: RoomState, gameData: ExportedGameData): void {
+  // Mark all records as imported
+  const importedBurnedWords: Record<string, any> = {};
+  for (const [w, rec] of Object.entries(gameData.burnedWords || {})) {
+    importedBurnedWords[w] = { ...rec, isImported: true };
+  }
+
+  const importedBurnedVerbs: Record<string, any> = {};
+  for (const [v, rec] of Object.entries(gameData.burnedVerbRoots || {})) {
+    importedBurnedVerbs[v] = { ...rec, isImported: true };
+  }
+
+  const importedChain: WordEntry[] = (gameData.chain || []).map((c) => ({
+    ...c,
+    isImported: true
+  }));
+
+  room.burnedWords = { ...importedBurnedWords, ...room.burnedWords };
+  room.burnedVerbRoots = { ...importedBurnedVerbs, ...room.burnedVerbRoots };
+  room.chain = [...importedChain, ...room.chain];
+
+  const lastWord = gameData.lastWord || (importedChain.length > 0 ? importedChain[importedChain.length - 1].word : undefined);
+  const lastLetter = gameData.lastLetter || (lastWord ? lastWord.charAt(lastWord.length - 1).toLowerCase() : undefined);
+
+  if (lastLetter) {
+    room.currentLetter = lastLetter;
+  }
+
+  room.importedMatchInfo = {
+    totalImportedWords: Object.keys(importedBurnedWords).length,
+    lastWord,
+    lastLetter,
+    importedAt: gameData.exportedAt || Date.now()
+  };
+}
+
+export function clearImportedGame(room: RoomState): void {
+  // Filter out any imported records
+  const cleanBurnedWords: Record<string, any> = {};
+  for (const [w, rec] of Object.entries(room.burnedWords)) {
+    if (!rec.isImported) cleanBurnedWords[w] = rec;
+  }
+
+  const cleanBurnedVerbs: Record<string, any> = {};
+  for (const [v, rec] of Object.entries(room.burnedVerbRoots)) {
+    if (!rec.isImported) cleanBurnedVerbs[v] = rec;
+  }
+
+  room.burnedWords = cleanBurnedWords;
+  room.burnedVerbRoots = cleanBurnedVerbs;
+  room.chain = room.chain.filter((c) => !c.isImported);
+  room.importedMatchInfo = null;
+  room.currentLetter = getRandomStartingLetter();
+}
+
 export function createInitialRoom(
   code: string,
   host: Player,
-  settings: Partial<GameSettings> = {}
+  settings: Partial<GameSettings> = {},
+  importedGame?: ExportedGameData
 ): RoomState {
   const defaultSettings: GameSettings = {
     turnTimeLimit: 15,
@@ -37,7 +94,7 @@ export function createInitialRoom(
     ...settings
   };
 
-  return {
+  const room: RoomState = {
     code,
     status: 'lobby',
     settings: defaultSettings,
@@ -52,8 +109,15 @@ export function createInitialRoom(
     burnedVerbRoots: {},
     recentViolation: null,
     winner: null,
-    turnCount: 0
+    turnCount: 0,
+    importedMatchInfo: null
   };
+
+  if (importedGame) {
+    applyImportedGame(room, importedGame);
+  }
+
+  return room;
 }
 
 export function getActivePlayers(room: RoomState): Player[] {
@@ -122,7 +186,9 @@ export async function processWordSubmission(
     if (orig.isFormOfRoot) {
       return handleViolation(room, player, {
         type: 'VERB_FORM_BURNED',
-        message: `Verb form violation! '${word}' is an inflection of root verb '${orig.isFormOfRoot}', which was already burned when ${orig.playerName} played '${orig.word}' on Turn ${orig.turn}!`,
+        message: orig.isImported
+          ? `Verb form violation! '${word}' is an inflection of root verb '${orig.isFormOfRoot}', which was already burned in the imported previous game!`
+          : `Verb form violation! '${word}' is an inflection of root verb '${orig.isFormOfRoot}', which was already burned when ${orig.playerName} played '${orig.word}' on Turn ${orig.turn}!`,
         offendingWord: word,
         playerId: player.id,
         playerName: player.name,
@@ -137,7 +203,9 @@ export async function processWordSubmission(
 
     return handleViolation(room, player, {
       type: 'DUPLICATE_WORD',
-      message: `Word '${word}' was already used by ${orig.playerName} on Turn ${orig.turn}!`,
+      message: orig.isImported
+        ? `Duplicate word! '${word}' was already used in the imported previous game!`
+        : `Word '${word}' was already used by ${orig.playerName} on Turn ${orig.turn}!`,
       offendingWord: word,
       playerId: player.id,
       playerName: player.name,
@@ -172,7 +240,9 @@ export async function processWordSubmission(
       const origVerb = room.burnedVerbRoots[root];
       return handleViolation(room, player, {
         type: 'VERB_FORM_BURNED',
-        message: `Verb form violation! The root verb '${root}' was already burned when ${origVerb.playerName} played '${origVerb.originalWord}' on Turn ${origVerb.turn}!`,
+        message: origVerb.isImported
+          ? `Verb form violation! Root verb '${root}' was already burned in the imported previous game!`
+          : `Verb form violation! The root verb '${root}' was already burned when ${origVerb.playerName} played '${origVerb.originalWord}' on Turn ${origVerb.turn}!`,
         offendingWord: word,
         playerId: player.id,
         playerName: player.name,
@@ -191,7 +261,9 @@ export async function processWordSubmission(
         const orig = room.burnedWords[form];
         return handleViolation(room, player, {
           type: 'VERB_FORM_BURNED',
-          message: `Verb form violation! '${word}' is a form of '${root}', which was already played as '${orig.word}' by ${orig.playerName} on Turn ${orig.turn}!`,
+          message: orig.isImported
+            ? `Verb form violation! '${word}' is a form of '${root}', which was already burned in the imported previous game!`
+            : `Verb form violation! '${word}' is a form of '${root}', which was already played as '${orig.word}' by ${orig.playerName} on Turn ${orig.turn}!`,
           offendingWord: word,
           playerId: player.id,
           playerName: player.name,
@@ -336,13 +408,35 @@ export function handleTimeout(room: RoomState): WordValidationResult {
 
 export function resetGame(room: RoomState): void {
   room.status = 'playing';
-  room.chain = [];
-  room.burnedWords = {};
-  room.burnedVerbRoots = {};
+
+  // Retain imported chain and burned words if an imported match exists!
+  if (room.importedMatchInfo) {
+    const importedBurnedWords: Record<string, any> = {};
+    for (const [w, rec] of Object.entries(room.burnedWords)) {
+      if (rec.isImported) importedBurnedWords[w] = rec;
+    }
+    const importedBurnedVerbs: Record<string, any> = {};
+    for (const [v, rec] of Object.entries(room.burnedVerbRoots)) {
+      if (rec.isImported) importedBurnedVerbs[v] = rec;
+    }
+    room.burnedWords = importedBurnedWords;
+    room.burnedVerbRoots = importedBurnedVerbs;
+    room.chain = room.chain.filter((c) => c.isImported);
+    if (room.importedMatchInfo.lastLetter) {
+      room.currentLetter = room.importedMatchInfo.lastLetter;
+    } else {
+      room.currentLetter = getRandomStartingLetter();
+    }
+  } else {
+    room.chain = [];
+    room.burnedWords = {};
+    room.burnedVerbRoots = {};
+    room.currentLetter = getRandomStartingLetter();
+  }
+
   room.recentViolation = null;
   room.winner = null;
   room.turnCount = 0;
-  room.currentLetter = getRandomStartingLetter();
   room.turnStartTime = Date.now();
   room.timeRemaining = room.settings.turnTimeLimit;
 

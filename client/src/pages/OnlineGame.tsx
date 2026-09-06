@@ -26,7 +26,9 @@ export const OnlineGame: React.FC<OnlineGameProps> = ({
     toggleReady,
     startGame,
     submitWord,
-    restartGame
+    restartGame,
+    importGame,
+    clearImportedGame
   } = socketHook;
 
   if (!room || !currentPlayer) {
@@ -70,6 +72,8 @@ export const OnlineGame: React.FC<OnlineGameProps> = ({
             onUpdateSettings={updateSettings}
             onToggleReady={toggleReady}
             onStartGame={startGame}
+            onImportGame={importGame}
+            onClearImportedGame={clearImportedGame}
           />
         )}
 

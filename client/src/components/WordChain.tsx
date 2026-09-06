@@ -83,6 +83,12 @@ export const WordChain: React.FC<WordChainProps> = ({ chain }) => {
                         </span>
                       )}
 
+                      {entry.isImported && (
+                        <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                          Previous Match
+                        </span>
+                      )}
+
                       {entry.partOfSpeech && !entry.isVerb && (
                         <span className="text-[10px] uppercase font-semibold px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">
                           {entry.partOfSpeech}

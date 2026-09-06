@@ -178,6 +178,29 @@ export function useSocket() {
     }
   }, []);
 
+  const importGame = useCallback((gameData: any): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      if (!socketRef.current) return reject(new Error('Not connected'));
+      setError(null);
+      socketRef.current.emit('room:import_game', { gameData }, (response) => {
+        if (response.success) {
+          sounds.playChime();
+          resolve();
+        } else {
+          const err = response.error || 'Failed to import game';
+          setError(err);
+          reject(new Error(err));
+        }
+      });
+    });
+  }, []);
+
+  const clearImportedGame = useCallback(() => {
+    if (socketRef.current) {
+      socketRef.current.emit('room:clear_imported_game');
+    }
+  }, []);
+
   return {
     isConnected,
     room,
@@ -191,6 +214,8 @@ export function useSocket() {
     toggleReady,
     startGame,
     submitWord,
-    restartGame
+    restartGame,
+    importGame,
+    clearImportedGame
   };
 }

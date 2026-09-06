@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Player, RoomState, WordEntry, Violation } from '@dict-game/shared';
-import { Plus, Trash2, Play, Users, RotateCcw } from 'lucide-react';
+import { Player, RoomState, WordEntry, Violation, ExportedGameData } from '@dict-game/shared';
+import { Plus, Trash2, Play, Users, RotateCcw, Upload, AlertCircle } from 'lucide-react';
 import { GameBoard } from '../components/GameBoard.js';
 import { GameOverModal } from '../components/GameOverModal.js';
 import { Header } from '../components/Header.js';
 import { sounds } from '../utils/audio.js';
+import { parseGameFile } from '../utils/gameStorage.js';
 
 interface PassAndPlayProps {
   onBackToHome: () => void;
@@ -23,6 +24,9 @@ export const PassAndPlay: React.FC<PassAndPlayProps> = ({ onBackToHome, onOpenRu
   
   // Game state
   const [roomState, setRoomState] = useState<RoomState | null>(null);
+  const [importedGame, setImportedGame] = useState<ExportedGameData | null>(null);
+  const [importError, setImportError] = useState<string | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
 
   const handleAddPlayer = () => {
     if (playerNames.length < 8) {
@@ -42,6 +46,31 @@ export const PassAndPlay: React.FC<PassAndPlayProps> = ({ onBackToHome, onOpenRu
     setPlayerNames(updated);
   };
 
+  const handleFileImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsImporting(true);
+    setImportError(null);
+
+    try {
+      const data = await parseGameFile(file);
+      setImportedGame(data);
+      sounds.playChime();
+    } catch (err: any) {
+      setImportError(err.message || 'Failed to import file');
+      sounds.playError();
+    } finally {
+      setIsImporting(false);
+      e.target.value = '';
+    }
+  };
+
+  const clearImportedGame = () => {
+    setImportedGame(null);
+    setImportError(null);
+  };
+
   const startMatch = () => {
     const players: Player[] = playerNames.map((name, i) => ({
       id: `local-player-${i}`,
@@ -57,7 +86,28 @@ export const PassAndPlay: React.FC<PassAndPlayProps> = ({ onBackToHome, onOpenRu
       wordsPlayedCount: 0
     }));
 
-    const initialLetter = STARTING_LETTERS[Math.floor(Math.random() * STARTING_LETTERS.length)];
+    const initialLetter =
+      importedGame?.lastLetter ||
+      STARTING_LETTERS[Math.floor(Math.random() * STARTING_LETTERS.length)];
+
+    const importedBurnedWords: Record<string, any> = {};
+    if (importedGame?.burnedWords) {
+      for (const [w, rec] of Object.entries(importedGame.burnedWords)) {
+        importedBurnedWords[w] = { ...rec, isImported: true };
+      }
+    }
+
+    const importedBurnedVerbs: Record<string, any> = {};
+    if (importedGame?.burnedVerbRoots) {
+      for (const [v, rec] of Object.entries(importedGame.burnedVerbRoots)) {
+        importedBurnedVerbs[v] = { ...rec, isImported: true };
+      }
+    }
+
+    const importedChain = (importedGame?.chain || []).map((c) => ({
+      ...c,
+      isImported: true
+    }));
 
     const state: RoomState = {
       code: 'LOCAL-MATCH',
@@ -74,12 +124,20 @@ export const PassAndPlay: React.FC<PassAndPlayProps> = ({ onBackToHome, onOpenRu
       currentLetter: initialLetter,
       turnStartTime: Date.now(),
       timeRemaining: turnTimerSetting,
-      chain: [],
-      burnedWords: {},
-      burnedVerbRoots: {},
+      chain: importedChain,
+      burnedWords: importedBurnedWords,
+      burnedVerbRoots: importedBurnedVerbs,
       recentViolation: null,
       winner: null,
-      turnCount: 0
+      turnCount: 0,
+      importedMatchInfo: importedGame
+        ? {
+            totalImportedWords: Object.keys(importedBurnedWords).length,
+            lastWord: importedGame.lastWord,
+            lastLetter: importedGame.lastLetter,
+            importedAt: importedGame.exportedAt
+          }
+        : null
     };
 
     setRoomState(state);
@@ -208,13 +266,36 @@ export const PassAndPlay: React.FC<PassAndPlayProps> = ({ onBackToHome, onOpenRu
       return;
     }
 
-    // 3. Exact word already used?
+    // 3. Exact word already used or inflection in burnedWords?
     if (roomState.burnedWords[word]) {
       sounds.playError();
       const orig = roomState.burnedWords[word];
+      if (orig.isFormOfRoot) {
+        const violation: Violation = {
+          type: 'VERB_FORM_BURNED',
+          message: orig.isImported
+            ? `Verb form violation! '${word}' is an inflection of root verb '${orig.isFormOfRoot}', which was already burned in the imported previous game!`
+            : `Verb form violation! '${word}' is an inflection of root verb '${orig.isFormOfRoot}', which was already burned when ${orig.playerName} played '${orig.word}' on Turn ${orig.turn}!`,
+          offendingWord: word,
+          playerId: curr.id,
+          playerName: curr.name,
+          turnNumber: turnCount,
+          timestamp: Date.now(),
+          originalTurn: orig.turn,
+          originalPlayerName: orig.playerName,
+          originalWord: orig.word,
+          verbRoot: orig.isFormOfRoot
+        };
+        setRoomState((prev) => (prev ? handleLocalViolation(prev, curr, violation) : null));
+        return;
+      }
+
       const violation: Violation = {
         type: 'DUPLICATE_WORD',
-        message: `'${word}' was already used by ${orig.playerName} on Turn ${orig.turn}!`,
+        message: orig.isImported
+          ? `Duplicate word! '${word}' was already used in the imported previous game!`
+          : `'${word}' was already used by ${orig.playerName} on Turn ${orig.turn}!`,
+        offendingWord: word,
         playerId: curr.id,
         playerName: curr.name,
         turnNumber: turnCount,
@@ -237,6 +318,7 @@ export const PassAndPlay: React.FC<PassAndPlayProps> = ({ onBackToHome, onOpenRu
         const violation: Violation = {
           type: 'INVALID_DICTIONARY_WORD',
           message: `'${word}' is not a valid English word in the dictionary!`,
+          offendingWord: word,
           playerId: curr.id,
           playerName: curr.name,
           turnNumber: turnCount,
@@ -254,7 +336,10 @@ export const PassAndPlay: React.FC<PassAndPlayProps> = ({ onBackToHome, onOpenRu
           const origVerb = roomState.burnedVerbRoots[root];
           const violation: Violation = {
             type: 'VERB_FORM_BURNED',
-            message: `Verb form violation! The root verb '${root}' was already burned when ${origVerb.playerName} played '${origVerb.originalWord}' on Turn ${origVerb.turn}!`,
+            message: origVerb.isImported
+              ? `Verb form violation! Root verb '${root}' was already burned in the imported previous game!`
+              : `Verb form violation! The root verb '${root}' was already burned when ${origVerb.playerName} played '${origVerb.originalWord}' on Turn ${origVerb.turn}!`,
+            offendingWord: word,
             playerId: curr.id,
             playerName: curr.name,
             turnNumber: turnCount,
@@ -276,7 +361,10 @@ export const PassAndPlay: React.FC<PassAndPlayProps> = ({ onBackToHome, onOpenRu
               const orig = roomState.burnedWords[form];
               const violation: Violation = {
                 type: 'VERB_FORM_BURNED',
-                message: `Verb form violation! '${word}' is a form of '${root}', which was already played as '${orig.word}' by ${orig.playerName} on Turn ${orig.turn}!`,
+                message: orig.isImported
+                  ? `Verb form violation! '${word}' is a form of '${root}', which was already burned in the imported previous game!`
+                  : `Verb form violation! '${word}' is a form of '${root}', which was already played as '${orig.word}' by ${orig.playerName} on Turn ${orig.turn}!`,
+                offendingWord: word,
                 playerId: curr.id,
                 playerName: curr.name,
                 turnNumber: turnCount,
@@ -474,6 +562,69 @@ export const PassAndPlay: React.FC<PassAndPlayProps> = ({ onBackToHome, onOpenRu
                 </select>
               </div>
             </div>
+
+            {/* Imported Game Status / Import Section */}
+            {importedGame ? (
+              <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-3.5 flex items-start justify-between gap-3 text-left">
+                <div className="flex items-start space-x-2.5">
+                  <div className="p-1.5 rounded-lg bg-amber-500/20 text-amber-400 mt-0.5 shrink-0">
+                    <Upload className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="flex items-center space-x-1.5">
+                      <span className="text-xs font-bold text-amber-400">
+                        Continuing Previous Game
+                      </span>
+                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 font-bold">
+                        {Object.keys(importedGame.burnedWords || {}).length} Words Burned
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-amber-200/90 mt-0.5">
+                      Previously used words and verb roots are banned.
+                      {importedGame.lastWord && (
+                        <span> Starts with letter <strong>"{importedGame.lastLetter?.toUpperCase() || ''}"</strong>.</span>
+                      )}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={clearImportedGame}
+                  className="text-xs text-rose-400 hover:text-rose-300 px-2 py-1 rounded bg-rose-950/60 hover:bg-rose-900/60 border border-rose-800 transition-colors font-semibold shrink-0"
+                >
+                  Clear
+                </button>
+              </div>
+            ) : (
+              <div className="bg-slate-950/50 border border-dashed border-slate-700/80 rounded-2xl p-3.5 flex items-center justify-between gap-2 text-left">
+                <div className="flex items-center space-x-2">
+                  <Upload className="w-4 h-4 text-teal-400 shrink-0" />
+                  <div>
+                    <span className="text-xs font-bold text-slate-200 block">Continue Previous Match?</span>
+                    <span className="text-[11px] text-slate-400">Import a saved .json file to ban old words.</span>
+                  </div>
+                </div>
+
+                <label className="cursor-pointer px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-bold text-teal-300 border border-teal-500/30 rounded-xl transition-colors flex items-center space-x-1 shrink-0">
+                  <Upload className="w-3.5 h-3.5" />
+                  <span>{isImporting ? 'Importing...' : 'Import .json'}</span>
+                  <input
+                    type="file"
+                    accept=".json"
+                    onChange={handleFileImport}
+                    disabled={isImporting}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+            )}
+
+            {importError && (
+              <div className="p-3 bg-rose-950/60 border border-rose-800 rounded-xl text-rose-300 text-xs flex items-center space-x-2">
+                <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+                <span>{importError}</span>
+              </div>
+            )}
 
             {/* Start Button */}
             <button

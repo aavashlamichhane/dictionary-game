@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react';
 import confetti from 'canvas-confetti';
 import { Player, RoomState } from '@dict-game/shared';
-import { Trophy, RotateCcw, Home, Skull, CheckCircle } from 'lucide-react';
+import { Trophy, RotateCcw, Home, Skull, CheckCircle, Download } from 'lucide-react';
+import { exportGameFile } from '../utils/gameStorage.js';
 
 interface GameOverModalProps {
   roomState: RoomState;
@@ -127,8 +128,17 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
           </div>
         </div>
 
+        {/* Export Game Button */}
+        <button
+          onClick={() => exportGameFile(roomState)}
+          className="w-full py-2.5 px-4 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-xs font-bold text-emerald-400 hover:text-emerald-300 transition-colors flex items-center justify-center space-x-2"
+        >
+          <Download className="w-4 h-4" />
+          <span>Export Game File (.json to continue later)</span>
+        </button>
+
         {/* Action Buttons */}
-        <div className="flex items-center space-x-3 pt-2">
+        <div className="flex items-center space-x-3 pt-1">
           <button
             onClick={onLeave}
             className="flex-1 py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 font-bold text-slate-300 transition-colors flex items-center justify-center space-x-2"
