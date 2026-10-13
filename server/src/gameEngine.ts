@@ -130,7 +130,7 @@ export function getNextPlayerIndex(room: RoomState, fromIndex: number): number {
   
   let next = (fromIndex + 1) % total;
   let attempts = 0;
-  while (room.players[next].isEliminated && attempts < total) {
+  while ((room.players[next].isEliminated || !room.players[next].isConnected) && attempts < total) {
     next = (next + 1) % total;
     attempts++;
   }
@@ -150,8 +150,9 @@ export async function processWordSubmission(
   player: Player,
   rawWord: string
 ): Promise<WordValidationResult> {
+  const turnIndex = room.currentTurnIndex;
   const word = rawWord.trim().toLowerCase();
-  room.turnCount++;
+  const turnNumber = ++room.turnCount;
 
   // 1. Min length check
   if (word.length < room.settings.minWordLength) {
@@ -181,7 +182,7 @@ export async function processWordSubmission(
   }
 
   // 3. Exact word or burned verb form in burnedWords?
-  if (room.burnedWords[word]) {
+  if (Object.hasOwn(room.burnedWords, word)) {
     const orig = room.burnedWords[word];
     if (orig.isFormOfRoot) {
       return handleViolation(room, player, {
@@ -219,6 +220,7 @@ export async function processWordSubmission(
 
   // 4. Verify in English dictionary
   const verified = await verifyWord(word, room.settings.minWordLength);
+  if (room.turnCount !== turnNumber || room.status !== 'playing' || !player.isConnected || room.currentTurnIndex !== turnIndex || room.players[turnIndex]?.id !== player.id) return { accepted: false };
   if (!verified.isValid) {
     return handleViolation(room, player, {
       type: 'INVALID_DICTIONARY_WORD',
@@ -236,7 +238,7 @@ export async function processWordSubmission(
   if (verbInfo.isVerb && verbInfo.verbRoot) {
     const root = verbInfo.verbRoot.toLowerCase();
     // Check if root already burned
-    if (room.burnedVerbRoots[root]) {
+    if (Object.hasOwn(room.burnedVerbRoots, root)) {
       const origVerb = room.burnedVerbRoots[root];
       return handleViolation(room, player, {
         type: 'VERB_FORM_BURNED',
@@ -257,7 +259,7 @@ export async function processWordSubmission(
 
     // Check if any conjugated form was already entered
     for (const form of verbInfo.allForms) {
-      if (room.burnedWords[form]) {
+      if (Object.hasOwn(room.burnedWords, form)) {
         const orig = room.burnedWords[form];
         return handleViolation(room, player, {
           type: 'VERB_FORM_BURNED',
@@ -442,10 +444,10 @@ export function resetGame(room: RoomState): void {
 
   for (const p of room.players) {
     p.strikes = 0;
-    p.isEliminated = false;
+    p.isEliminated = !p.isConnected;
     p.score = 0;
     p.wordsPlayedCount = 0;
   }
 
-  room.currentTurnIndex = 0;
+  room.currentTurnIndex = Math.max(0, room.players.findIndex(p => p.isConnected));
 }

@@ -1,86 +1,80 @@
-# 🔤 WordChain - The Verb-Burn Word Battle
+# WordChain
 
-A fast-paced, real-time multiplayer word-chain game built for competition and collaboration across multiple devices or locally on a single device.
+A word-chain game for friends on separate devices or sharing one screen. Each word starts with the last letter of the previous word. Repeated words are rejected, and playing a verb burns its related forms: playing **took** also rules out **take**, **taken**, **takes**, and **taking**.
 
----
+[Try the self-hosted demo](https://wordchain.aavashlamichhane.com.np/) · [Hosting guide](docs/HOSTING.md)
 
-## 🎮 Core Game Rules
+The demo runs on a personal server and may occasionally be slow or unavailable.
 
-1. **The Word Chain:**
-   - The game begins with a starting letter.
-   - The active player must submit a valid English word starting with that letter.
-   - Each subsequent player must say a word starting with the **ending letter** of the previous word (e.g. `appl`**`e`** $\rightarrow$ **`e`**`lephan`**`t`** $\rightarrow$ **`t`**`ree`).
+## Features
 
-2. **No Duplicates:**
-   - No word can be repeated across the entire match. If Alice played *"tiger"* on Turn 2, no one can ever play *"tiger"* again.
+- Online rooms for up to eight players, shareable invitations, ready checks, and host settings.
+- Pass & Play for two to eight people using one device.
+- Server-side word-list validation, WordNet definitions when available, and heuristic verb-family detection.
+- Timed or unlimited turns; three-strikes, sudden-death, and casual modes.
+- Export and import JSON match files to carry forward the word chain and burned words into a new match. Player scores and identities are not restored.
+- Browser-generated sound effects and a responsive interface.
 
-3. **The Verb-Burn Rule (Special Rule!):**
-   - If any form of a verb is played (e.g. *"took"*), the **root verb** (`take`) and **all its inflection forms** (`take`, `takes`, `took`, `taken`, `taking`) are immediately burned!
-   - If another player later attempts to submit *"taking"* or *"take"*, the engine detects the burned root and rejects the word:
-     > ⚠️ *"Verb form violation! 'taking' is an inflection of root verb 'take', which was already burned when Alice played 'took' on Turn 1!"*
+**Pass & Play still needs the backend** for dictionary requests. Dictionaries are bundled with the server; an external dictionary service is not required. You can run a built copy on a local machine or LAN without internet, but this is not an offline PWA. Optional Google Fonts fall back to system fonts when unavailable.
 
-4. **Valid Words & Definitions:**
-   - Every word is validated against a 275,000+ English word dictionary and WordNet offline database. Words must have an established dictionary meaning. Definitions and parts of speech are displayed on each word card.
+## Local setup
 
-5. **Timers & Elimination:**
-   - **3 Strikes Mode:** 3 mistakes/timeouts eliminate a player.
-   - **Sudden Death Mode:** 1 mistake eliminates a player.
-   - **Casual Mode:** Points and warnings without elimination.
+Install Node.js 22 or newer and the pinned pnpm version:
 
----
-
-## 🌐 Game Modes
-
-### 1. Online Multiplayer (Cross-Device)
-- **Host a Room:** Generate a 4-character Room Code (e.g. `WORD-9K`) and a 1-click shareable invite link (`?room=WORD-9K`).
-- **Join a Room:** Friends open the link or type the room code on their phones, tablets, or laptops.
-- **Synchronized Lobby:** Live avatars, player ready checks, host controls (turn timer, game mode).
-- **Live Turns:** Real-time turns, server-driven countdown clock, instant word validation, and victory podium with confetti.
-
-### 2. Pass & Play (Local 1-Device)
-- Enter 2 to 8 player names on a single smartphone, tablet, or laptop.
-- Pass the device around the room on each turn without needing internet or multiple devices!
-
----
-
-## 🛠️ Tech Stack & Architecture
-
-- **Monorepo:** `pnpm` workspaces (`@dict-game/shared`, `@dict-game/server`, `@dict-game/client`).
-- **Frontend:** React 19, TypeScript, Vite, Tailwind CSS, Lucide Icons, Canvas-Confetti.
-- **Backend:** Node.js, Express, Socket.io (bi-directional WebSockets).
-- **Linguistic Engine:**
-  - `an-array-of-english-words`: 275,000+ word offline validation.
-  - `wordnet`: 140,000+ word offline definitions and parts of speech.
-  - `compromise` NLP + Curated Irregular Verb Family Database: Instant 0ms lemmatization and verb-conjugation poisoning.
-- **Audio:** Synthesized browser Web Audio API sound effects (no external audio files needed).
-
----
-
-## 🚀 Getting Started
-
-### Prerequisites
-- Node.js >= 18
-- `pnpm` >= 9
-
-### Installation
-```bash
-# Install all dependencies
-pnpm install
-```
-
-### Development
-```bash
-# Runs both backend (port 3001) and frontend (port 5173 with proxy) concurrently
+```sh
+npm install --global pnpm@10.30.2
+git clone https://github.com/aavashlamichhane/dictionary-game.git
+cd dictionary-game
+pnpm install --frozen-lockfile
 pnpm dev
 ```
-Open [http://localhost:5173](http://localhost:5173) in your browser.
 
-### Production Build & Run
-```bash
-# Build shared, server, and client
+Open http://localhost:5173. The development command builds the shared types first, then starts Vite on port 5173 and the backend on port 3001. Vite proxies both /api and /socket.io to the backend. Rebuild shared types after changing shared/src, or run its TypeScript compiler in watch mode in another terminal.
+
+For a production build:
+
+```sh
 pnpm build
-
-# Run production server (serves both API/WebSockets and frontend on port 3001)
 pnpm start
 ```
-Open [http://localhost:3001](http://localhost:3001) in your browser.
+
+Open http://localhost:3001. One Node process serves the built frontend, HTTP API, and Socket.IO. PORT defaults to 3001. No database, API key, or application .env file is required.
+
+## Playing
+
+Create a room, share its code (for example WORD-AB23) or invitation URL (?room=WORD-AB23), and have the other players join and mark themselves ready. The host chooses the timer and game mode. Alternatively, choose Pass & Play and enter two to eight names.
+
+Valid words must meet the minimum length, appear in the bundled English word list, start with the required letter, and avoid previously burned words or verb families. Not every accepted word has a WordNet definition, and verb classification can be imperfect.
+
+## Hosting
+
+See [docs/HOSTING.md](docs/HOSTING.md) for Docker Compose, native Node, HTTPS reverse proxying, LAN access, updates, health checks, and troubleshooting. Serve the site, /api, and /socket.io from the same origin. Static-only hosting does not run the game backend.
+
+Rooms, scores, and timers live in memory. Use a single server process: restarting it clears active rooms, and multiple independent replicas will not share games. Empty rooms are removed after everyone disconnects. Use exported match files to retain word history before a restart.
+
+## Checks
+
+```sh
+pnpm test
+pnpm audit --prod
+```
+
+Tests build all workspaces and cover production HTTP serving, dictionary lookup, malformed Socket.IO requests, word submissions, room lifecycle, and import/settings validation. CI also builds and smoke-tests the Docker image.
+
+## Repository layout
+
+| Directory | Purpose |
+| --- | --- |
+| client/ | React, Vite, Tailwind CSS, local mode, and Socket.IO client |
+| server/ | Express, Socket.IO, room lifecycle, and dictionary/game engine |
+| shared/ | TypeScript game state and event types |
+| tests/ | Node test runner regression and integration checks |
+| docs/ | Hosting instructions |
+
+The npm workspace names remain @dict-game/* for compatibility. The root package is private to prevent accidental npm publication; the GitHub repository and its source are public.
+
+## Contributions and licensing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development and bug reports. Rooms use anonymous player names, not authenticated accounts; room codes are invitations rather than an access-control mechanism. Do not use the service to store sensitive information or expose it without appropriate hosting limits.
+
+The application is licensed under [MIT](LICENSE). Bundled dictionaries and dependencies retain their own licenses; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

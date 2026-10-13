@@ -6,8 +6,9 @@ services:
     image: wordchain:latest
     container_name: wordchain
     restart: unless-stopped
+    init: true
     ports:
-      - "3001:3001"
+      - "${HOST_BIND:-127.0.0.1}:${HOST_PORT:-3001}:3001"
     environment:
       - NODE_ENV=production
       - PORT=3001

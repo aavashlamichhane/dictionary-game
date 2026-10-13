@@ -267,7 +267,7 @@ export const PassAndPlay: React.FC<PassAndPlayProps> = ({ onBackToHome, onOpenRu
     }
 
     // 3. Exact word already used or inflection in burnedWords?
-    if (roomState.burnedWords[word]) {
+    if (Object.prototype.hasOwnProperty.call(roomState.burnedWords, word)) {
       sounds.playError();
       const orig = roomState.burnedWords[word];
       if (orig.isFormOfRoot) {
@@ -331,7 +331,7 @@ export const PassAndPlay: React.FC<PassAndPlayProps> = ({ onBackToHome, onOpenRu
       // 5. Verb Form Lemmatization check
       if (data.isVerb && data.verbRoot) {
         const root = data.verbRoot.toLowerCase();
-        if (roomState.burnedVerbRoots[root]) {
+        if (Object.prototype.hasOwnProperty.call(roomState.burnedVerbRoots, root)) {
           sounds.playError();
           const origVerb = roomState.burnedVerbRoots[root];
           const violation: Violation = {
@@ -356,7 +356,7 @@ export const PassAndPlay: React.FC<PassAndPlayProps> = ({ onBackToHome, onOpenRu
         // Check if any conjugated form was burned
         if (data.allVerbForms) {
           for (const form of data.allVerbForms) {
-            if (roomState.burnedWords[form]) {
+            if (Object.prototype.hasOwnProperty.call(roomState.burnedWords, form)) {
               sounds.playError();
               const orig = roomState.burnedWords[form];
               const violation: Violation = {

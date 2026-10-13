@@ -17,10 +17,12 @@ import {
   processWordSubmission,
   handleTimeout,
   resetGame,
+  getNextPlayerIndex,
   getActivePlayers
 } from './gameEngine.js';
 
 export class RoomManager {
+  private submittingRooms = new Set<string>();
   private rooms = new Map<string, RoomState>();
   private socketToRoom = new Map<string, string>();
   private roomTimers = new Map<string, NodeJS.Timeout>();
@@ -37,7 +39,8 @@ export class RoomManager {
     // Leave previous room if any
     this.leaveRoom(socket);
 
-    const code = generateRoomCode();
+    let code = generateRoomCode();
+    while (this.rooms.has(code)) code = generateRoomCode();
     const host: Player = {
       id: socket.id,
       name: payload.playerName.trim() || 'Host',
@@ -78,7 +81,7 @@ export class RoomManager {
       const existing = room.players.find(
         (p) => p.name.toLowerCase() === payload.playerName.trim().toLowerCase()
       );
-      if (existing) {
+      if (existing && !existing.isConnected) {
         existing.id = socket.id;
         existing.isConnected = true;
         this.socketToRoom.set(socket.id, code);
@@ -159,11 +162,17 @@ export class RoomManager {
       // Check if it was their turn
       if (room.currentTurnIndex === playerIndex) {
         this.stopTimer(code);
-        const next = (room.currentTurnIndex + 1) % room.players.length;
+        const next = getNextPlayerIndex(room, room.currentTurnIndex);
         room.currentTurnIndex = next;
         this.startTimer(code);
       }
 
+      if (!room.players.some(p => p.isConnected)) { this.destroyRoom(code); return; }
+      if (leavingPlayer.isHost) {
+        leavingPlayer.isHost = false;
+        const host = room.players.find(p => p.isConnected)!;
+        host.isHost = true; room.hostId = host.id;
+      }
       const active = getActivePlayers(room);
       if (active.length <= 1 && room.players.length > 1) {
         room.status = 'game_over';
@@ -238,6 +247,9 @@ export class RoomManager {
     const room = this.rooms.get(code);
     if (!room || room.hostId !== socket.id || room.status !== 'lobby') return;
 
+    if (room.players.filter(p => p.isConnected).length < 2 || room.players.some(p => p.isConnected && !p.isReady)) {
+      socket.emit('room:error', { message: 'At least two ready players are required' }); return;
+    }
     room.status = 'playing';
     resetGame(room);
     this.broadcastRoomUpdate(code);
@@ -259,7 +271,14 @@ export class RoomManager {
       return;
     }
 
-    const result = await processWordSubmission(room, currentPlayer, word);
+    if (this.submittingRooms.has(code)) return;
+    this.submittingRooms.add(code);
+    this.stopTimer(code);
+    let result;
+    try { result = await processWordSubmission(room, currentPlayer, word); }
+    catch (err) { this.startTimer(code); throw err; }
+    finally { this.submittingRooms.delete(code); }
+    if (this.rooms.get(code) !== room) return;
 
     if (result.accepted && result.wordEntry) {
       this.io.to(code).emit('game:word_accepted', {
@@ -289,7 +308,7 @@ export class RoomManager {
     const code = this.socketToRoom.get(socket.id);
     if (!code) return;
     const room = this.rooms.get(code);
-    if (!room || room.hostId !== socket.id) return;
+    if (!room || room.hostId !== socket.id || room.status === 'lobby' || this.submittingRooms.has(code) || room.players.filter(p => p.isConnected).length < 2) return;
 
     resetGame(room);
     this.broadcastRoomUpdate(code);
@@ -298,6 +317,11 @@ export class RoomManager {
 
   public getRoom(code: string): RoomState | undefined {
     return this.rooms.get(code);
+  }
+
+  public close(): void {
+    for (const code of this.rooms.keys()) this.destroyRoom(code);
+    this.socketToRoom.clear();
   }
 
   private startTimer(code: string): void {

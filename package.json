@@ -3,11 +3,17 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "concurrently -n \"server,client\" -c \"blue,green\" \"pnpm --filter @dict-game/server dev\" \"pnpm --filter @dict-game/client dev\"",
+    "dev": "pnpm --filter @dict-game/shared build && concurrently -n \"server,client\" -c \"blue,green\" \"pnpm --filter @dict-game/server dev\" \"pnpm --filter @dict-game/client dev\"",
     "build": "pnpm --filter @dict-game/shared build && pnpm --filter @dict-game/server build && pnpm --filter @dict-game/client build",
-    "start": "pnpm --filter @dict-game/server start"
+    "start": "pnpm --filter @dict-game/server start",
+    "test": "pnpm build && node --test tests/*.test.mjs"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"
+  },
+  "license": "MIT",
+  "packageManager": "pnpm@10.30.2",
+  "engines": {
+    "node": ">=22"
   }
 }

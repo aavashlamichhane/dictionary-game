@@ -10,6 +10,7 @@ import {
 } from '@dict-game/shared';
 import { RoomManager } from './roomManager.js';
 import { verifyWord } from './dictionary.js';
+import { object, text, settings as validateSettings, profile, importedGame } from './validation.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -17,10 +18,12 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const httpServer = createServer(app);
 
+app.disable('x-powered-by');
 app.use(cors());
 app.use(express.json());
 
 const io = new Server<ClientToServerEvents, ServerToClientEvents>(httpServer, {
+  maxHttpBufferSize: 256 * 1024,
   cors: {
     origin: '*',
     methods: ['GET', 'POST']
@@ -51,8 +54,9 @@ app.get('/api/rooms/:code', (req, res) => {
 
 app.get('/api/word/:word', async (req, res) => {
   const word = req.params.word;
-  const result = await verifyWord(word);
-  res.json(result);
+  if (word.length > 80 || !/^[a-z]+$/i.test(word)) { res.status(400).json({ error: 'Invalid word' }); return; }
+  try { res.json(await verifyWord(word)); }
+  catch { res.status(503).json({ error: 'Dictionary temporarily unavailable' }); }
 });
 
 // Production client serving
@@ -70,35 +74,43 @@ app.get('*', (req, res, next) => {
 // Socket.io connections
 io.on('connection', (socket) => {
   console.log(`⚡ Client connected: ${socket.id}`);
+  const errorMessage = (err: unknown) => err instanceof Error ? err.message : 'Invalid request';
+  const respond = (callback: unknown, response: any) => {
+    if (typeof callback === 'function') callback(response);
+    else if (!response.success) socket.emit('room:error', { message: response.error });
+  };
 
   socket.on('room:create', (payload, callback) => {
     try {
-      const room = roomManager.createRoom(socket, payload);
+      const input = object(payload);
+      const room = roomManager.createRoom(socket, { ...profile(input), settings: validateSettings(input.settings), importedGame: input.importedGame === undefined ? undefined : importedGame(input.importedGame) });
       const host = room.players[0];
       socket.emit('room:joined', { player: host, roomState: room });
-      callback({ success: true, roomCode: room.code });
+      respond(callback, { success: true, roomCode: room.code });
     } catch (err: any) {
-      callback({ success: false, error: err?.message || 'Failed to create room' });
+      respond(callback, { success: false, error: err?.message || 'Failed to create room' });
     }
   });
 
   socket.on('room:join', (payload, callback) => {
     try {
-      const result = roomManager.joinRoom(socket, payload);
+      const input = object(payload);
+      const result = roomManager.joinRoom(socket, { ...profile(input), roomCode: text(input.roomCode, 'Room code', 9) });
       if (result.success && result.room) {
         const player = result.room.players.find((p) => p.id === socket.id)!;
         socket.emit('room:joined', { player, roomState: result.room });
-        callback({ success: true });
+        respond(callback, { success: true });
       } else {
-        callback({ success: false, error: result.error || 'Failed to join room' });
+        respond(callback, { success: false, error: result.error || 'Failed to join room' });
       }
     } catch (err: any) {
-      callback({ success: false, error: err?.message || 'Failed to join room' });
+      respond(callback, { success: false, error: err?.message || 'Failed to join room' });
     }
   });
 
   socket.on('room:update_settings', (settings) => {
-    roomManager.updateSettings(socket, settings);
+    try { roomManager.updateSettings(socket, validateSettings(settings)); }
+    catch (err) { socket.emit('room:error', { message: errorMessage(err) }); }
   });
 
   socket.on('room:toggle_ready', () => {
@@ -111,10 +123,10 @@ io.on('connection', (socket) => {
 
   socket.on('room:import_game', (payload, callback) => {
     try {
-      const result = roomManager.importGame(socket, payload.gameData);
-      callback(result);
+      const result = roomManager.importGame(socket, importedGame(object(payload).gameData));
+      respond(callback, result);
     } catch (err: any) {
-      callback({ success: false, error: err?.message || 'Failed to import game' });
+      respond(callback, { success: false, error: err?.message || 'Failed to import game' });
     }
   });
 
@@ -123,7 +135,10 @@ io.on('connection', (socket) => {
   });
 
   socket.on('game:submit_word', (payload) => {
-    roomManager.submitWord(socket, payload.word);
+    try {
+      const word = text(object(payload).word, 'Word', 80);
+      void roomManager.submitWord(socket, word).catch(err => socket.emit('room:error', { message: errorMessage(err) }));
+    } catch (err) { socket.emit('room:error', { message: errorMessage(err) }); }
   });
 
   socket.on('game:restart', () => {
@@ -147,6 +162,8 @@ const server = httpServer.listen(PORT, '0.0.0.0', () => {
 
 const shutdown = (signal: string) => {
   console.log(`\n🛑 Received ${signal}, shutting down gracefully...`);
+  roomManager.close();
+  io.close();
   server.close(() => {
     console.log('Server stopped');
     process.exit(0);

@@ -4,7 +4,7 @@ FROM node:22-alpine AS builder
 WORKDIR /app
 
 # Install pnpm
-RUN npm install -g pnpm@11
+RUN npm install -g pnpm@10.30.2
 
 # Copy workspace manifests
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
@@ -28,7 +28,7 @@ FROM node:22-alpine AS runner
 
 WORKDIR /app
 
-RUN npm install -g pnpm@11
+RUN npm install -g pnpm@10.30.2
 
 ENV NODE_ENV=production
 ENV PORT=3001
@@ -46,6 +46,9 @@ RUN pnpm install --prod --frozen-lockfile
 COPY --from=builder /app/shared/dist ./shared/dist
 COPY --from=builder /app/server/dist ./server/dist
 COPY --from=builder /app/client/dist ./client/dist
+
+COPY LICENSE THIRD_PARTY_NOTICES.md ./
+USER node
 
 EXPOSE 3001
 

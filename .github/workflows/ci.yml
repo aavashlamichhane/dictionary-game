@@ -1,0 +1,31 @@
+name: Validate
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test
+      - run: pnpm audit --prod
+      - run: docker build -t wordchain:ci .
+      - name: Smoke test Docker runtime
+        run: |
+          docker run -d --name wordchain-ci -p 127.0.0.1:3101:3001 wordchain:ci
+          trap 'docker logs wordchain-ci; docker rm -f wordchain-ci' EXIT
+          for attempt in $(seq 1 30); do
+            if curl --fail http://127.0.0.1:3101/api/health; then break; fi
+            sleep 1
+          done
+          curl --fail http://127.0.0.1:3101/api/health
+          curl --fail http://127.0.0.1:3101/api/word/apple
+          test "$(docker exec wordchain-ci id -u)" != '0'

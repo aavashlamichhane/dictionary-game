@@ -117,7 +117,7 @@ export const RulesModal: React.FC<RulesModalProps> = ({ isOpen, onClose }) => {
                 4
               </span>
               <h3 className="font-serif text-base font-bold text-darkgreen">
-                Strict Offline Lexicon Verification
+                Server-side Lexicon Verification
               </h3>
             </div>
             <p className="text-xs sm:text-sm text-darkgreen/80">
